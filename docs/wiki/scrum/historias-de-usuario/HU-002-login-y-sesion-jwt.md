@@ -149,4 +149,19 @@ JDK 21.0.12 (Eclipse Temurin) y Apache Maven 3.9.16 instalados en la máquina de
 ## Notas y decisiones
 
 - Esta es la HU objetivo de `prompts/goal-loop/GOAL_01_GUIADO_SIMPLE.md`: el `/goal` debe detenerse cuando (1) registro único funcione, (2) password hasheado, (3) login emita access+refresh, (4) refresh genere sesión renovada, (5) casos negativos con pruebas, (6) `mvn test` pase. **Las seis condiciones se cumplieron** el 2026-09-18; solo falta la verificación contra MySQL real (requiere Docker).
+
+### Ejecución formal de GOAL_01 (2026-09-18)
+
+Verificación checkpoint por checkpoint contra el código real (no solo evidencia previa), con `mvn test` corrido de nuevo en el momento:
+
+| # | Condición de parada | Verificado en | Resultado |
+|---|---|---|---|
+| 1 | Registro USER con email/documento únicos | `RegistrarUsuarioService` (`existePorEmail`/`existePorNumeroDocumento` → `EmailYaRegistradoException`/`DocumentoYaRegistradoException`) | PASS |
+| 2 | Password hasheado | `BCryptPasswordHasherAdapter` (`BCryptPasswordEncoder`) | PASS |
+| 3 | Login emite access + refresh | `IniciarSesionService.iniciarSesion` | PASS |
+| 4 | Refresh válido → sesión renovada | `RenovarSesionService.renovar` (rotación: revoca `jti` usado, emite access+refresh nuevos) | PASS |
+| 5 | Casos negativos con pruebas | `RegistrarUsuarioServiceTest` (email/documento duplicado), `IniciarSesionServiceTest` (email inexistente/password incorrecto), `RenovarSesionServiceTest` (refresh revocado/malformado), `AuthFlowIntegrationTest` (400 datos incompletos) | PASS |
+| 6 | `mvn test` pasa | Ejecutado en el momento: `Tests run: 15, Failures: 0, Errors: 0` — BUILD SUCCESS | PASS |
+
+**GOAL_01: PASS.** No se necesitaron reintentos (las 6 condiciones ya estaban implementadas de la sesión S2 original; esta ejecución fue de verificación formal, no de implementación nueva). No se tocó UI ni recuperación de contraseña, conforme al alcance del goal.
 - Decisión tomada: **rotación de refresh token con denylist persistido** (`RefreshTokenStorePort` → `RefreshTokenJpaAdapter` → tabla `refresh_tokens`). Cada `/refresh` invalida el token anterior (marca `revoked_at`).
