@@ -65,6 +65,28 @@ Se reemplazaron los adaptadores temporales en memoria de HU-001/HU-002 por adapt
 - `mvn test` sobre `citas-api`: **BUILD SUCCESS, 15/15 pruebas** (dominio, casos de uso, integración MockMvc completa de HU-001/HU-002, incluida una prueba nueva de CA-04 que antes no existía). Evidencia actualizada en `HU-001`/`HU-002`.
 - Sigue sin Docker/Git en esta máquina: falta ejecutar `V1`/`V2` contra MySQL real y correr `scripts/init-repos.ps1`.
 
+## 2026-09-18 — Segundo export de AI Studio: dominio correcto, alcance recortado a login
+
+**HECHO/DECISIÓN.** El primer export de Google AI Studio para `citas-web` resultó ser un producto no relacionado ("SaludCita", portal español de videoconsultas con dependencias de Gemini API y Express) — descartado, nunca integrado.
+
+El segundo export corrigió el dominio (marca "FCV Citas", `@fcv.org`, sede real de Floridablanca/Santander/Colombia en vez de España/RGPD), pero traía dos problemas nuevos detectados en revisión antes de integrar:
+
+1. **Premisa incorrecta**: se presentaba como un "laboratorio de simulación quirúrgica" para residentes/docentes reservando quirófanos, con cuentas aprovisionadas solo por la Dirección de Docencia — contradice RF-01 del PRD (`USER` = paciente ficticio que se autorregistra).
+2. **Alcance mayor al pedido**: traía 5 pantallas completas (login, sesión activa, reserva de quirófano, mis citas, protocolos) con datos mock, cuando solo se pidió la pantalla de login; las otras 4 pantallas corresponden a épicas (EP-005 a EP-009) todavía en `Borrador`, sin aprobar.
+
+**DECISIÓN del usuario** (elegida entre tres opciones presentadas): integrar únicamente la pantalla de login, conservando el diseño visual tal cual lo generó AI Studio (sin tocar layout/estilo), pero (a) conectándola a `POST /api/auth/login`/`POST /api/auth/logout` reales, y (b) corrigiendo solo los textos que contradecían el PRD.
+
+**Implementado por el agente** en `citas-web/front/` (pendiente de aplanar a la raíz del repo y de eliminar los archivos huérfanos, ver más abajo):
+
+- `LoginView`: fetch real a `${VITE_API_URL}/api/auth/login`, manejo de `401`/error de red; se quitó el selector "Modo de prueba" (scaffolding de mocks de AI Studio); textos de audiencia ("personal médico y residentes") y de validación (`@fcv.org` obligatorio) corregidos para reflejar pacientes autorregistrados.
+- `SuccessView`: logout real contra `POST /api/auth/logout`; se quitaron campos inventados (rol, departamento, hospitalId) que la API de login no devuelve (no hay endpoint de perfil todavía, EP-002 sin aprobar).
+- `RegistrationModal`/`PasswordRecoveryModal`: pasaron de simular una acción falsa a ser placeholders honestos (HU-001 registro existe en backend pero sin pantalla propia aún; HU-003 recuperar contraseña sigue en Borrador).
+- `Header`, `SupportModal`, `App.tsx`, `types.ts`: recortados para no referenciar las pantallas fuera de alcance.
+- `package.json`/`metadata.json`/`.env.example`: se quitaron `@google/genai`, `express`, `dotenv`, `@types/express`, `lucide-react`, `motion`, `tsx` (sin uso real en el código) y la declaración de capacidad Gemini; `.env.example` ahora usa `VITE_API_URL` en vez de `GEMINI_API_KEY`.
+- `citas-web/AGENTS.md` generado (reemplaza `AGENTS.md.template`).
+
+**Pendiente, requiere confirmación del usuario** (bloqueado por el guardrail de acciones destructivas del propio agente, no por una restricción del proyecto): eliminar `BookingMatrixView.tsx`, `MyAppointmentsView.tsx`, `ProtocolsView.tsx`, `data/mockData.ts` (huérfanos, ya no se importan desde `App.tsx` pero siguen physically en el repo y romperían `tsc --noEmit` porque referencian tipos removidos de `types.ts`) y aplanar `citas-web/front/*` a la raíz de `citas-web/` (consistente con `citas-web/.env.example`/`.gitignore` ya existentes en la raíz). Build/typecheck no verificado: no hay Node.js instalado en esta máquina todavía.
+
 ## Pendiente de diseño reservado al usuario
 
 - **Prototipado visual** (Skill `stitch-design-to-frontend`): pantallas obligatorias, aprobación explícita y handoff a Google AI Studio. No se generará ningún diseño visual ni se elegirá React/Angular en nombre del usuario.
