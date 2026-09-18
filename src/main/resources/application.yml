@@ -1,0 +1,37 @@
+server:
+  port: ${API_PORT:8080}
+
+spring:
+  application:
+    name: citas-api
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:citas_fcv_training}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bogota
+    username: ${DB_USER:citas_app}
+    password: ${DB_PASSWORD:CHANGE_ME}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+app:
+  jwt:
+    access-secret: ${JWT_ACCESS_SECRET:CHANGE_ME_ACCESS_SECRET_MIN_32_CHARS}
+    refresh-secret: ${JWT_REFRESH_SECRET:CHANGE_ME_REFRESH_SECRET_MIN_32_CHARS}
+    access-minutes: ${JWT_ACCESS_MINUTES:15}
+    refresh-days: ${JWT_REFRESH_DAYS:7}
+  cors:
+    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

@@ -1,0 +1,24 @@
+# Perfil "test": no hay MySQL disponible en este entorno de generación, así
+# que se excluye toda la autoconfiguración de datasource/JPA/Flyway y se usan
+# los dobles en memoria de `testsupport` (ver InMemoryPersistenceTestConfig)
+# en vez de los adaptadores JPA reales (`UsuarioJpaAdapter`,
+# `RefreshTokenJpaAdapter`, marcados @Profile("!test")). Cuando el estudiante
+# tenga Docker/MySQL corriendo, considerar migrar esta prueba a un perfil de
+# integración real contra MySQL (por ejemplo con Testcontainers) en vez de
+# depender solo de estos dobles.
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+
+app:
+  jwt:
+    access-secret: test-access-secret-min-32-caracteres-xx
+    refresh-secret: test-refresh-secret-min-32-caracteres-xx
+    access-minutes: 15
+    refresh-days: 7
+  cors:
+    allowed-origin: http://localhost:5173
