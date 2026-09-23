@@ -1,6 +1,6 @@
 ---
 tipo: wiki
-actualizado: 2026-09-17
+actualizado: 2026-09-21
 ---
 
 # Riesgos e incógnitas
@@ -9,7 +9,7 @@ actualizado: 2026-09-17
 
 - **Doble reserva de slots**: RN-01/RN-05 requieren retención atómica de slots al solicitar/confirmar una cita. Debe probarse explícitamente en S3 (ver `HU-014`, `HU-015`).
 - **Reprogramación concurrente**: RN-10 exige que la cita original sobreviva mientras la reprogramación está `PENDING`; riesgo de perder la cita original si la transacción no es atómica.
-- **Ausencia de toolchain local**: sin Docker/JDK/Node verificados en la máquina de desarrollo no hay forma de ejecutar `mvn test` ni levantar MySQL localmente; todo el código entregado en S2 queda sin ejecutar hasta que el estudiante instale las herramientas. Ver [[decisiones]].
+- **Docker todavía no operativo**: JDK/Maven/Git/Node ya están instalados y verificados en la máquina del estudiante (`mvn test` 15/15, `npm run build` sin errores). Docker Desktop está instalado pero falta que el estudiante complete el reinicio de Windows + configuración de WSL2 (acción manual, no automatizable). Mientras tanto, `V1`/`V2` y los adaptadores JPA nunca se han probado contra un MySQL real. Ver [[decisiones]].
 
 ## Incógnitas reales (no bloquean especificar, sí bloquean implementar sin definirlas)
 

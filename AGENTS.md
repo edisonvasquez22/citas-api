@@ -1,6 +1,6 @@
 # AGENTS.md — `citas-api`
 
-> Generado a partir de `../prompts/agents/PROMPT_AGENT_CITAS_API.md` una vez inicializado el proyecto Spring Boot real (2026-09-17). Reemplaza a `AGENTS.md.template`.
+> Generado a partir de `../prompts/agents/PROMPT_AGENT_CITAS_API.md` una vez inicializado el proyecto Spring Boot real (2026-09-17). Reemplaza a `AGENTS.md.template`. Revisado/depurado contra evidencia real del repo el 2026-09-21 (sin cambios de código desde el 17; solo se confirmó vigencia).
 
 ## Responsabilidad de este repo
 
@@ -11,6 +11,8 @@
 - MySQL 8.4 + Spring Data JPA + Flyway, con esquema real (`V1__esquema_inicial.sql`, `V2__seed_catalogos_fijos.sql`; ver `docs/db-design/MODELO_3FN.md`).
 - Reglas de negocio del PRD, HU por HU.
 - Pruebas de dominio, aplicación e integración.
+
+**Estado verificado (2026-09-21):** `mvn test` da `BUILD SUCCESS` con **15/15 pruebas** (dominio + aplicación + integración `AuthFlowIntegrationTest`), corrido repetidas veces con JDK 21 + Maven 3.9.16 reales. `GOAL_01_GUIADO_SIMPLE.md` ejecutado como verificación formal de HU-001/HU-002: **PASS** (ver `docs/wiki/scrum/historias-de-usuario/HU-002-login-y-sesion-jwt.md`). Sigue sin verificarse contra MySQL real (Docker instalado pero no operativo todavía) — todo lo anterior corre con los dobles en memoria de pruebas.
 
 ## Reglas arquitectónicas (verificadas contra el código real)
 
