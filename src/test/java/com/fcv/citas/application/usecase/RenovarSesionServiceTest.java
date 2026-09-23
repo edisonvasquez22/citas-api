@@ -10,6 +10,7 @@ import com.fcv.citas.application.port.out.RefreshTokenStorePort;
 import com.fcv.citas.application.port.out.TokenProviderPort;
 import com.fcv.citas.application.port.out.UsuarioRepositoryPort;
 import com.fcv.citas.domain.exception.TokenInvalidoException;
+import com.fcv.citas.domain.model.RolNombre;
 import com.fcv.citas.domain.model.Usuario;
 import java.time.Instant;
 import java.util.Optional;
@@ -39,7 +40,9 @@ class RenovarSesionServiceTest {
     @BeforeEach
     void setUp() {
         service = new RenovarSesionService(tokenProvider, refreshTokenStore, usuarioRepository);
-        usuario = Usuario.registrarNuevo("Ana", "Pérez", "CC", "1000000001", "ana@example.com", "3000000000", "hash");
+        // reconstruir (no registrarNuevo): representa un usuario ya persistido que se busca por id.
+        usuario = Usuario.reconstruir("1", "Ana", "Pérez", "CC", "1000000001", "ana@example.com", "3000000000",
+            "hash", Set.of(RolNombre.USER), true);
     }
 
     @Test

@@ -14,6 +14,8 @@
 
 **Estado verificado (2026-09-21):** `mvn test` da `BUILD SUCCESS` con **15/15 pruebas** (dominio + aplicación + integración `AuthFlowIntegrationTest`), corrido repetidas veces con JDK 21 + Maven 3.9.16 reales. `GOAL_01_GUIADO_SIMPLE.md` ejecutado como verificación formal de HU-001/HU-002: **PASS** (ver `docs/wiki/scrum/historias-de-usuario/HU-002-login-y-sesion-jwt.md`). Sigue sin verificarse contra MySQL real (Docker instalado pero no operativo todavía) — todo lo anterior corre con los dobles en memoria de pruebas.
 
+**Estado verificado (2026-09-23), tras adoptar el esquema exacto de `database/reference/db.sql`:** `mvn test` reconfirmado en `BUILD SUCCESS`, **15/15 pruebas**, incluyendo `UsuarioTest`/`RegistrarUsuarioServiceTest`/`IniciarSesionServiceTest`/`RenovarSesionServiceTest` actualizados a la nueva semántica de id autoincremental. Sigue sin verificarse contra MySQL real.
+
 ## Reglas arquitectónicas (verificadas contra el código real)
 
 - El dominio (`domain/model`, `domain/exception`) no importa `org.springframework.*` ni `jakarta.persistence.*`. Ver `Usuario.java`.
@@ -26,7 +28,9 @@
 
 ## Diseño de datos
 
-El modelo 3FN (`docs/db-design/MODELO_3FN.md`, comparado contra la referencia en `COMPARACION_REFERENCIA.md`) lo diseña este agente por decisión explícita del usuario (2026-09-17). `V1__esquema_inicial.sql` ya cubre **todas** las tablas del PRD; no lo regeneres ni lo edites una vez aplicado contra una base real — agrega `V3__...sql` para cualquier cambio.
+**2026-09-23 — El esquema es ahora una copia estructural exacta de `database/reference/db.sql`** (decisión explícita del usuario, revierte la decisión del 17 de septiembre de diseñar independientemente). Ver `docs/db-design/MODELO_3FN.md` (sección 8) y `COMPARACION_REFERENCIA.md` para el detalle de qué cambió. `V1__esquema_inicial.sql` ya cubre **todas** las tablas del PRD, con los mismos nombres de tabla/columna que la referencia; no lo regeneres ni lo edites una vez aplicado contra una base real — agrega `V3__...sql` para cualquier cambio.
+
+Cambio importante para quien toque `users`/`refresh_tokens`: `users.id` ahora es `BIGINT UNSIGNED AUTO_INCREMENT` (antes UUID generado en dominio) — `Usuario.registrarNuevo` construye el agregado con `id = null`, y `UsuarioRepositoryPort.guardar` es quien devuelve el `Usuario` con el id ya asignado. `refresh_tokens` se identifica por `token_hash` (SHA-256 del `jti`), no por el `jti` en claro.
 
 Solo hay `@Entity`/repositorio/adaptador JPA para lo que las HU aprobadas necesitan (`users`, `roles`, `refresh_tokens` — HU-001/HU-002/HU-006). Antes de implementar una HU nueva (EP-002 en adelante), verifica si la tabla que necesita ya existe en `V1` (probablemente sí) y limítate a agregar el `@Entity`/adaptador correspondiente, no una migración de estructura nueva.
 

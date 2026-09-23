@@ -15,7 +15,8 @@ class UsuarioTest {
 
         assertThat(usuario.getRoles()).containsExactly(RolNombre.USER);
         assertThat(usuario.isActivo()).isTrue();
-        assertThat(usuario.getId()).isNotBlank();
+        // El id lo asigna la base de datos (BIGINT AUTO_INCREMENT) al guardar, no el dominio.
+        assertThat(usuario.getId()).isNull();
     }
 
     @Test

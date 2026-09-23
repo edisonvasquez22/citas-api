@@ -1,5 +1,7 @@
 # Comparación contra `database/reference/db.sql`
 
+> **2026-09-23 — Ver "Decisión" al final, actualizada.** El usuario pidió explícitamente que el esquema quedara exacto a esta referencia, incluyendo las partes ya implementadas (usuarios/refresh tokens). El análisis de esta página (hecho el 2026-09-17, antes de esa decisión) se conserva sin editar como registro histórico de por qué el diseño propio tomó cada camino distinto; ya no describe el estado actual del esquema, ver `MODELO_3FN.md`.
+
 Escrito **después** de terminar `MODELO_3FN.md` y `V1__esquema_inicial.sql`, sin haber consultado antes la referencia (según pide `database/REQUISITOS_NORMALIZACION_3FN.md`).
 
 ## Coincidencias (validan el diseño propio)
@@ -31,10 +33,6 @@ Escrito **después** de terminar `MODELO_3FN.md` y `V1__esquema_inicial.sql`, si
 
 ## Decisión
 
-Se mantiene el modelo propio (`V1__esquema_inicial.sql`) como esquema vigente: cubre correctamente todos los RF/RN del PRD para el alcance ya aprobado (EP-001/EP-003 parcial) y el resto del backlog. Se registran como mejoras opcionales para una migración futura (`V3`, cuando se aborden las HU correspondientes en S3/S4):
+**Original (2026-09-17):** se mantenía el modelo propio (`V1__esquema_inicial.sql`) como esquema vigente, con las 3 mejoras de la referencia registradas como opcionales para una migración futura.
 
-1. `is_terminal` en `appointment_statuses` y `reschedule_statuses`.
-2. Evaluar si `user_affiliations` necesita convertirse en tabla con historial (`valid_from`/`valid_to`) cuando se implemente EP-002 (HU-005), si se decide que las citas deben registrar qué afiliación las cubrió.
-3. `patient_action_after_rejection` en `reschedule_requests` cuando se implemente HU-020 (EP-008), si se quiere ese detalle en reportes.
-
-Ninguna de las tres es necesaria para que HU-001/HU-002/HU-006 (alcance S2) funcionen correctamente.
+**Reemplazada (2026-09-23), decisión explícita del usuario:** se adoptó el esquema de `database/reference/db.sql` **exacto**, incluyendo las partes que ya estaban implementadas y probadas (`users`, `refresh_tokens`) — no solo las tablas todavía sin código. Esto significa que las tres "mejoras opcionales" de esta página ya no son opcionales: se implementaron (`is_terminal`, historial de afiliación vía `user_insurance_affiliations`, `patient_action_after_rejection`), y además se adoptaron las diferencias de la fila "Donde mi diseño toma un camino distinto" — incluyendo perder la ventaja documentada ahí para `refresh_tokens.id`/`professional_specialties.is_primary`/retención de slot en reprogramación. Ver `MODELO_3FN.md` sección 8 para el resumen de lo que cambió y qué implicó en el código Java (`Usuario`, `UsuarioJpaAdapter`, `RefreshTokenJpaAdapter`, pruebas). Detalle completo de la decisión en `docs/wiki/llm-wiki/wiki/decisiones.md`, entrada 2026-09-23.

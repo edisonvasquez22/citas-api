@@ -11,9 +11,11 @@ import com.fcv.citas.application.port.out.RefreshTokenStorePort;
 import com.fcv.citas.application.port.out.TokenProviderPort;
 import com.fcv.citas.application.port.out.UsuarioRepositoryPort;
 import com.fcv.citas.domain.exception.CredencialesInvalidasException;
+import com.fcv.citas.domain.model.RolNombre;
 import com.fcv.citas.domain.model.Usuario;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,7 +44,10 @@ class IniciarSesionServiceTest {
     @BeforeEach
     void setUp() {
         service = new IniciarSesionService(usuarioRepository, passwordHasher, tokenProvider, refreshTokenStore);
-        usuario = Usuario.registrarNuevo("Ana", "Pérez", "CC", "1000000001", "ana@example.com", "3000000000", "hash-guardado");
+        // reconstruir (no registrarNuevo): en estos tests el usuario ya existe y se busca por email/id;
+        // el id lo asigna la base de datos, así que un usuario "existente" en un test debe traer uno.
+        usuario = Usuario.reconstruir("1", "Ana", "Pérez", "CC", "1000000001", "ana@example.com", "3000000000",
+            "hash-guardado", Set.of(RolNombre.USER), true);
     }
 
     @Test

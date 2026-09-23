@@ -3,16 +3,16 @@ package com.fcv.citas.domain.model;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Agregado de dominio para HU-001/HU-002. Sin dependencias de Spring/JPA/HTTP
  * (ver citas-api/docs/wiki/llm-wiki/wiki/arquitectura.md).
  *
- * El identificador se genera aquí como UUID en memoria porque la clave real de
- * persistencia depende del diseño 3FN que todavía no existe (ver
- * docs/wiki/llm-wiki/wiki/decisiones.md); el adaptador de persistencia futuro
- * puede reasignarlo si el esquema aprobado usa otra estrategia.
+ * El identificador es {@code null} hasta que se persiste: el esquema adoptado
+ * (copia exacta de database/reference/db.sql, ver decisiones.md 2026-09-23)
+ * usa {@code BIGINT AUTO_INCREMENT} para `users.id`, así que lo asigna la base
+ * de datos al guardar, no el dominio. {@code UsuarioRepositoryPort.guardar}
+ * siempre devuelve el Usuario con el id ya asignado.
  */
 public final class Usuario {
 
@@ -57,9 +57,8 @@ public final class Usuario {
         if (passwordHash == null || passwordHash.isBlank()) {
             throw new IllegalArgumentException("passwordHash no puede estar vacío");
         }
-        String id = UUID.randomUUID().toString();
         String emailNormalizado = email.trim().toLowerCase(Locale.ROOT);
-        return new Usuario(id, nombres.trim(), apellidos.trim(), tipoDocumento.trim(), numeroDocumento.trim(),
+        return new Usuario(null, nombres.trim(), apellidos.trim(), tipoDocumento.trim(), numeroDocumento.trim(),
             emailNormalizado, telefono.trim(), passwordHash, EnumSet.of(RolNombre.USER), true);
     }
 

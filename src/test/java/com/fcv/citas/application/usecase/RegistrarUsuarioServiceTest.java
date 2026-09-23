@@ -43,12 +43,18 @@ class RegistrarUsuarioServiceTest {
         when(usuarioRepository.existePorEmail("ana@example.com")).thenReturn(false);
         when(usuarioRepository.existePorNumeroDocumento("1000000001")).thenReturn(false);
         when(passwordHasher.hash("clave-segura-1")).thenReturn("hash-seguro");
-        when(usuarioRepository.guardar(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+        // Simula lo que hace el adaptador real: el repositorio asigna el id (autoincremental) al guardar.
+        when(usuarioRepository.guardar(any(Usuario.class))).thenAnswer(inv -> {
+            Usuario u = inv.getArgument(0);
+            return Usuario.reconstruir("1", u.getNombres(), u.getApellidos(), u.getTipoDocumento(),
+                u.getNumeroDocumento(), u.getEmail(), u.getTelefono(), u.getPasswordHash(), u.getRoles(),
+                u.isActivo());
+        });
 
         Resultado resultado = service.registrar(COMMAND_VALIDO);
 
         assertThat(resultado.email()).isEqualTo("ana@example.com");
-        assertThat(resultado.usuarioId()).isNotBlank();
+        assertThat(resultado.usuarioId()).isEqualTo("1");
     }
 
     @Test

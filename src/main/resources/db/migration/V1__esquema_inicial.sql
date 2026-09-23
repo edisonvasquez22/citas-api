@@ -1,272 +1,374 @@
--- Esquema inicial 3FN — diseño propio, ver citas-api/docs/db-design/MODELO_3FN.md
--- para el diagrama ER, las dependencias funcionales y la justificación de cada decisión.
+-- Esquema inicial — copia estructural exacta de database/reference/db.sql
+-- (decisión explícita del usuario, 2026-09-23; ver citas-api/docs/db-design/MODELO_3FN.md
+-- y COMPARACION_REFERENCIA.md para el detalle de la decisión y lo que cambió).
+-- No incluye CREATE DATABASE/USE/SET NAMES/SET time_zone: ese esquema/charset
+-- ya lo establece la conexión (spring.datasource.url + docker-compose.yml).
 
--- =========================================================================
--- 1. Catalogos (RF-05 fijos / RF-06 configurables)
--- =========================================================================
+-- ============================================================
+-- 1. SEGURIDAD Y USUARIOS
+-- ============================================================
 
-CREATE TABLE roles (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(20) NOT NULL,
-    name VARCHAR(50) NOT NULL,
-    CONSTRAINT uk_roles_code UNIQUE (code)
+CREATE TABLE IF NOT EXISTS roles (
+    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) NOT NULL UNIQUE,
+    name VARCHAR(80) NOT NULL,
+    description VARCHAR(255) NULL
 ) ENGINE=InnoDB;
 
-CREATE TABLE sites (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(10) NOT NULL,
-    name VARCHAR(150) NOT NULL,
-    address VARCHAR(255) NOT NULL,
-    CONSTRAINT uk_sites_code UNIQUE (code)
-) ENGINE=InnoDB;
-
-CREATE TABLE regimes (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(20) NOT NULL,
-    name VARCHAR(50) NOT NULL,
-    CONSTRAINT uk_regimes_code UNIQUE (code)
-) ENGINE=InnoDB;
-
-CREATE TABLE appointment_statuses (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(20) NOT NULL,
-    name VARCHAR(50) NOT NULL,
-    CONSTRAINT uk_appointment_statuses_code UNIQUE (code)
-) ENGINE=InnoDB;
-
-CREATE TABLE reschedule_statuses (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(20) NOT NULL,
-    name VARCHAR(50) NOT NULL,
-    CONSTRAINT uk_reschedule_statuses_code UNIQUE (code)
-) ENGINE=InnoDB;
-
-CREATE TABLE slot_statuses (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(20) NOT NULL,
-    name VARCHAR(50) NOT NULL,
-    CONSTRAINT uk_slot_statuses_code UNIQUE (code)
-) ENGINE=InnoDB;
-
-CREATE TABLE eps (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(150) NOT NULL,
-    active TINYINT(1) NOT NULL DEFAULT 1,
-    CONSTRAINT uk_eps_name UNIQUE (name)
-) ENGINE=InnoDB;
-
-CREATE TABLE eps_plans (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    eps_id BIGINT NOT NULL,
-    name VARCHAR(150) NOT NULL,
-    active TINYINT(1) NOT NULL DEFAULT 1,
-    CONSTRAINT fk_eps_plans_eps FOREIGN KEY (eps_id) REFERENCES eps (id),
-    CONSTRAINT uk_eps_plans_eps_name UNIQUE (eps_id, name)
-) ENGINE=InnoDB;
-
-CREATE TABLE specialties (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    duration_minutes SMALLINT NOT NULL,
-    is_general TINYINT(1) NOT NULL DEFAULT 0,
-    active TINYINT(1) NOT NULL DEFAULT 1,
-    CONSTRAINT uk_specialties_name UNIQUE (name),
-    CONSTRAINT chk_specialties_duration CHECK (duration_minutes IN (30, 60))
-) ENGINE=InnoDB;
-
--- =========================================================================
--- 2. Nucleo de usuarios (RF-01, RF-02, RF-03)
--- =========================================================================
-
-CREATE TABLE users (
-    id CHAR(36) PRIMARY KEY,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(80) NOT NULL,
+    last_name VARCHAR(80) NOT NULL,
     document_type VARCHAR(20) NOT NULL,
-    document_number VARCHAR(30) NOT NULL,
-    email VARCHAR(180) NOT NULL,
-    phone VARCHAR(30) NOT NULL,
+    document_number VARCHAR(40) NOT NULL,
+    email VARCHAR(160) NOT NULL,
+    phone VARCHAR(30) NULL,
     password_hash VARCHAR(255) NOT NULL,
-    active TINYINT(1) NOT NULL DEFAULT 1,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT uk_users_email UNIQUE (email),
-    CONSTRAINT uk_users_document UNIQUE (document_number)
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT uq_users_document UNIQUE (document_type, document_number),
+    CONSTRAINT uq_users_email UNIQUE (email)
 ) ENGINE=InnoDB;
 
-CREATE TABLE user_roles (
-    user_id CHAR(36) NOT NULL,
-    role_id BIGINT NOT NULL,
+CREATE TABLE IF NOT EXISTS user_roles (
+    user_id BIGINT UNSIGNED NOT NULL,
+    role_id SMALLINT UNSIGNED NOT NULL,
+    assigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, role_id),
-    CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT fk_user_roles_role FOREIGN KEY (role_id) REFERENCES roles (id)
+    CONSTRAINT fk_user_roles_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_user_roles_role
+        FOREIGN KEY (role_id) REFERENCES roles(id)
+        ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
-CREATE TABLE refresh_tokens (
-    id CHAR(36) PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    token_hash VARCHAR(255) NOT NULL,
     expires_at DATETIME NOT NULL,
     revoked_at DATETIME NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_refresh_tokens_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    KEY idx_refresh_tokens_user (user_id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    device_info VARCHAR(255) NULL,
+    CONSTRAINT uq_refresh_tokens_hash UNIQUE (token_hash),
+    CONSTRAINT fk_refresh_tokens_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE,
+    INDEX ix_refresh_tokens_user (user_id),
+    INDEX ix_refresh_tokens_expiry (expires_at)
 ) ENGINE=InnoDB;
 
-CREATE TABLE password_reset_tokens (
-    id CHAR(36) PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
-    token_hash CHAR(64) NOT NULL,
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    token_hash VARCHAR(255) NOT NULL,
     expires_at DATETIME NOT NULL,
     used_at DATETIME NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_password_reset_token_hash UNIQUE (token_hash),
-    CONSTRAINT fk_password_reset_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_password_reset_hash UNIQUE (token_hash),
+    CONSTRAINT fk_password_reset_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE,
+    INDEX ix_password_reset_user (user_id),
+    INDEX ix_password_reset_expiry (expires_at)
 ) ENGINE=InnoDB;
 
--- =========================================================================
--- 3. Profesionales, especialidades y sedes (RF-07, RF-08, RF-09)
--- =========================================================================
+-- ============================================================
+-- 2. ASEGURAMIENTO / EPS
+-- ============================================================
 
-CREATE TABLE professionals (
-    user_id CHAR(36) PRIMARY KEY,
-    professional_code VARCHAR(30) NOT NULL,
-    license_number VARCHAR(30) NOT NULL,
-    active TINYINT(1) NOT NULL DEFAULT 1,
-    CONSTRAINT fk_professionals_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT uk_professionals_code UNIQUE (professional_code),
-    CONSTRAINT uk_professionals_license UNIQUE (license_number)
+CREATE TABLE IF NOT EXISTS insurance_regimes (
+    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) NOT NULL UNIQUE,
+    name VARCHAR(80) NOT NULL
 ) ENGINE=InnoDB;
 
-CREATE TABLE professional_specialties (
-    professional_id CHAR(36) NOT NULL,
-    specialty_id BIGINT NOT NULL,
-    is_primary TINYINT(1) NOT NULL DEFAULT 0,
-    primary_flag CHAR(36) AS (CASE WHEN is_primary = 1 THEN professional_id ELSE NULL END) STORED,
+CREATE TABLE IF NOT EXISTS eps (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) NOT NULL UNIQUE,
+    name VARCHAR(150) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS eps_plans (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    eps_id BIGINT UNSIGNED NOT NULL,
+    regime_id SMALLINT UNSIGNED NOT NULL,
+    code VARCHAR(50) NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT uq_eps_plan_code UNIQUE (eps_id, code),
+    CONSTRAINT fk_eps_plans_eps
+        FOREIGN KEY (eps_id) REFERENCES eps(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_eps_plans_regime
+        FOREIGN KEY (regime_id) REFERENCES insurance_regimes(id)
+        ON DELETE RESTRICT,
+    INDEX ix_eps_plans_regime (regime_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS user_insurance_affiliations (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    plan_id BIGINT UNSIGNED NOT NULL,
+    membership_number VARCHAR(80) NOT NULL,
+    is_current BOOLEAN NOT NULL DEFAULT TRUE,
+    valid_from DATE NULL,
+    valid_to DATE NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_user_membership UNIQUE (user_id, plan_id, membership_number),
+    CONSTRAINT fk_user_insurance_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_user_insurance_plan
+        FOREIGN KEY (plan_id) REFERENCES eps_plans(id)
+        ON DELETE RESTRICT,
+    INDEX ix_user_insurance_current (user_id, is_current)
+) ENGINE=InnoDB;
+
+-- ============================================================
+-- 3. CATÁLOGOS DE SERVICIO
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS locations (
+    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(30) NOT NULL UNIQUE,
+    name VARCHAR(180) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    department VARCHAR(100) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS specialties (
+    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(150) NOT NULL UNIQUE,
+    appointment_duration_minutes SMALLINT UNSIGNED NOT NULL,
+    is_general BOOLEAN NOT NULL DEFAULT FALSE,
+    requires_admin_approval BOOLEAN NOT NULL DEFAULT TRUE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT ck_specialty_duration
+        CHECK (appointment_duration_minutes IN (30, 60))
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS professionals (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL UNIQUE,
+    professional_code VARCHAR(40) NOT NULL UNIQUE,
+    license_number VARCHAR(80) NOT NULL UNIQUE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_professionals_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS professional_specialties (
+    professional_id BIGINT UNSIGNED NOT NULL,
+    specialty_id SMALLINT UNSIGNED NOT NULL,
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY (professional_id, specialty_id),
-    CONSTRAINT fk_prof_spec_professional FOREIGN KEY (professional_id) REFERENCES professionals (user_id) ON DELETE CASCADE,
-    CONSTRAINT fk_prof_spec_specialty FOREIGN KEY (specialty_id) REFERENCES specialties (id),
-    CONSTRAINT uk_prof_spec_one_primary UNIQUE (primary_flag)
+    CONSTRAINT fk_prof_specialty_professional
+        FOREIGN KEY (professional_id) REFERENCES professionals(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_prof_specialty_specialty
+        FOREIGN KEY (specialty_id) REFERENCES specialties(id)
+        ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
-CREATE TABLE professional_sites (
-    professional_id CHAR(36) NOT NULL,
-    site_id BIGINT NOT NULL,
-    PRIMARY KEY (professional_id, site_id),
-    CONSTRAINT fk_prof_sites_professional FOREIGN KEY (professional_id) REFERENCES professionals (user_id) ON DELETE CASCADE,
-    CONSTRAINT fk_prof_sites_site FOREIGN KEY (site_id) REFERENCES sites (id)
+CREATE TABLE IF NOT EXISTS professional_locations (
+    professional_id BIGINT UNSIGNED NOT NULL,
+    location_id SMALLINT UNSIGNED NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY (professional_id, location_id),
+    CONSTRAINT fk_prof_location_professional
+        FOREIGN KEY (professional_id) REFERENCES professionals(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_prof_location_location
+        FOREIGN KEY (location_id) REFERENCES locations(id)
+        ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- =========================================================================
--- 4. Afiliacion (RF-04)
--- =========================================================================
+-- ============================================================
+-- 4. CITAS Y ESTADOS
+-- ============================================================
 
-CREATE TABLE user_affiliations (
-    user_id CHAR(36) PRIMARY KEY,
-    eps_plan_id BIGINT NOT NULL,
-    regime_id BIGINT NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_affiliation_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT fk_affiliation_eps_plan FOREIGN KEY (eps_plan_id) REFERENCES eps_plans (id),
-    CONSTRAINT fk_affiliation_regime FOREIGN KEY (regime_id) REFERENCES regimes (id)
+CREATE TABLE IF NOT EXISTS appointment_statuses (
+    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(40) NOT NULL UNIQUE,
+    name VARCHAR(80) NOT NULL,
+    is_terminal BOOLEAN NOT NULL DEFAULT FALSE
 ) ENGINE=InnoDB;
 
--- =========================================================================
--- 5. Disponibilidad y slots (RF-08, RF-09, RF-10, RN-01, RN-05)
--- =========================================================================
+CREATE TABLE IF NOT EXISTS appointments (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    patient_user_id BIGINT UNSIGNED NOT NULL,
+    professional_id BIGINT UNSIGNED NOT NULL,
+    location_id SMALLINT UNSIGNED NOT NULL,
+    specialty_id SMALLINT UNSIGNED NOT NULL,
+    insurance_affiliation_id BIGINT UNSIGNED NULL,
+    status_id SMALLINT UNSIGNED NOT NULL,
+    reason VARCHAR(500) NULL,
+    scheduled_start_at DATETIME NOT NULL,
+    scheduled_end_at DATETIME NOT NULL,
+    created_by_user_id BIGINT UNSIGNED NOT NULL,
+    approved_by_user_id BIGINT UNSIGNED NULL,
+    approved_at DATETIME NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT ck_appointment_time
+        CHECK (scheduled_end_at > scheduled_start_at),
+    CONSTRAINT fk_appointments_patient
+        FOREIGN KEY (patient_user_id) REFERENCES users(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_appointments_professional
+        FOREIGN KEY (professional_id) REFERENCES professionals(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_appointments_location
+        FOREIGN KEY (location_id) REFERENCES locations(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_appointments_specialty
+        FOREIGN KEY (specialty_id) REFERENCES specialties(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_appointments_insurance
+        FOREIGN KEY (insurance_affiliation_id) REFERENCES user_insurance_affiliations(id)
+        ON DELETE SET NULL,
+    CONSTRAINT fk_appointments_status
+        FOREIGN KEY (status_id) REFERENCES appointment_statuses(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_appointments_created_by
+        FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_appointments_approved_by
+        FOREIGN KEY (approved_by_user_id) REFERENCES users(id)
+        ON DELETE RESTRICT,
+    INDEX ix_appointments_patient (patient_user_id, scheduled_start_at),
+    INDEX ix_appointments_professional (professional_id, scheduled_start_at),
+    INDEX ix_appointments_status (status_id)
+) ENGINE=InnoDB;
 
-CREATE TABLE availability_blocks (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    professional_id CHAR(36) NOT NULL,
-    site_id BIGINT NOT NULL,
+CREATE TABLE IF NOT EXISTS availability_blocks (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    professional_id BIGINT UNSIGNED NOT NULL,
+    location_id SMALLINT UNSIGNED NOT NULL,
+    available_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT ck_availability_block_time
+        CHECK (end_time > start_time),
+    CONSTRAINT fk_availability_professional
+        FOREIGN KEY (professional_id) REFERENCES professionals(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_availability_location
+        FOREIGN KEY (location_id) REFERENCES locations(id)
+        ON DELETE RESTRICT,
+    INDEX ix_availability_prof_date
+        (professional_id, available_date, start_time),
+    INDEX ix_availability_location_date
+        (location_id, available_date)
+) ENGINE=InnoDB;
+
+-- Slots atómicos de 30 minutos.
+-- Una cita de 30 min reserva 1 slot; una de 60 min reserva 2 consecutivos.
+CREATE TABLE IF NOT EXISTS professional_slots (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    availability_block_id BIGINT UNSIGNED NOT NULL,
     start_at DATETIME NOT NULL,
     end_at DATETIME NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_avail_block_professional FOREIGN KEY (professional_id) REFERENCES professionals (user_id) ON DELETE CASCADE,
-    CONSTRAINT fk_avail_block_site FOREIGN KEY (site_id) REFERENCES sites (id),
-    CONSTRAINT chk_avail_block_range CHECK (end_at > start_at)
+    appointment_id BIGINT UNSIGNED NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_professional_slot_time
+        CHECK (end_at > start_at),
+    CONSTRAINT uq_block_slot UNIQUE (availability_block_id, start_at),
+    CONSTRAINT fk_slots_availability_block
+        FOREIGN KEY (availability_block_id) REFERENCES availability_blocks(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_slots_appointment
+        FOREIGN KEY (appointment_id) REFERENCES appointments(id)
+        ON DELETE SET NULL,
+    INDEX ix_slots_start (start_at),
+    INDEX ix_slots_appointment (appointment_id)
 ) ENGINE=InnoDB;
 
--- =========================================================================
--- 6. Citas y reprogramaciones (RF-11 a RF-15, RF-18)
--- =========================================================================
-
-CREATE TABLE appointments (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
-    professional_id CHAR(36) NOT NULL,
-    specialty_id BIGINT NOT NULL,
-    site_id BIGINT NOT NULL,
-    status_id BIGINT NOT NULL,
-    start_at DATETIME NOT NULL,
-    end_at DATETIME NOT NULL,
-    rejection_reason VARCHAR(255) NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_appointments_user FOREIGN KEY (user_id) REFERENCES users (id),
-    CONSTRAINT fk_appointments_professional FOREIGN KEY (professional_id) REFERENCES professionals (user_id),
-    CONSTRAINT fk_appointments_specialty FOREIGN KEY (specialty_id) REFERENCES specialties (id),
-    CONSTRAINT fk_appointments_site FOREIGN KEY (site_id) REFERENCES sites (id),
-    CONSTRAINT fk_appointments_status FOREIGN KEY (status_id) REFERENCES appointment_statuses (id),
-    CONSTRAINT chk_appointments_range CHECK (end_at > start_at),
-    KEY idx_appointments_user_status (user_id, status_id),
-    KEY idx_appointments_professional_status (professional_id, status_id, start_at)
+CREATE TABLE IF NOT EXISTS appointment_status_history (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    appointment_id BIGINT UNSIGNED NOT NULL,
+    status_id SMALLINT UNSIGNED NOT NULL,
+    changed_by_user_id BIGINT UNSIGNED NULL,
+    change_source VARCHAR(20) NOT NULL DEFAULT 'USER',
+    reason VARCHAR(500) NULL,
+    changed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_status_history_source
+        CHECK (change_source IN ('SYSTEM', 'USER', 'ADMIN')),
+    CONSTRAINT fk_status_history_appointment
+        FOREIGN KEY (appointment_id) REFERENCES appointments(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_status_history_status
+        FOREIGN KEY (status_id) REFERENCES appointment_statuses(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_status_history_user
+        FOREIGN KEY (changed_by_user_id) REFERENCES users(id)
+        ON DELETE SET NULL,
+    INDEX ix_status_history_appointment (appointment_id, changed_at)
 ) ENGINE=InnoDB;
 
-CREATE TABLE reschedule_requests (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    appointment_id BIGINT NOT NULL,
-    new_start_at DATETIME NOT NULL,
-    new_end_at DATETIME NOT NULL,
-    status_id BIGINT NOT NULL,
-    rejection_reason VARCHAR(255) NULL,
-    requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+CREATE TABLE IF NOT EXISTS reschedule_request_statuses (
+    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(40) NOT NULL UNIQUE,
+    name VARCHAR(80) NOT NULL,
+    is_terminal BOOLEAN NOT NULL DEFAULT FALSE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS reschedule_requests (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    appointment_id BIGINT UNSIGNED NOT NULL,
+    requested_by_user_id BIGINT UNSIGNED NOT NULL,
+    requested_location_id SMALLINT UNSIGNED NOT NULL,
+    status_id SMALLINT UNSIGNED NOT NULL,
+    previous_start_at DATETIME NOT NULL,
+    previous_end_at DATETIME NOT NULL,
+    requested_start_at DATETIME NOT NULL,
+    requested_end_at DATETIME NOT NULL,
+    decision_reason VARCHAR(500) NULL,
+    decided_by_user_id BIGINT UNSIGNED NULL,
     decided_at DATETIME NULL,
-    decided_by CHAR(36) NULL,
-    CONSTRAINT fk_reschedule_appointment FOREIGN KEY (appointment_id) REFERENCES appointments (id),
-    CONSTRAINT fk_reschedule_status FOREIGN KEY (status_id) REFERENCES reschedule_statuses (id),
-    CONSTRAINT fk_reschedule_decided_by FOREIGN KEY (decided_by) REFERENCES users (id),
-    CONSTRAINT chk_reschedule_range CHECK (new_end_at > new_start_at)
-) ENGINE=InnoDB;
-
--- availability_slots va despues de appointments/reschedule_requests porque los referencia.
-CREATE TABLE availability_slots (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    block_id BIGINT NOT NULL,
-    professional_id CHAR(36) NOT NULL,
-    start_at DATETIME NOT NULL,
-    end_at DATETIME NOT NULL,
-    status_id BIGINT NOT NULL,
-    appointment_id BIGINT NULL,
-    reschedule_request_id BIGINT NULL,
-    CONSTRAINT fk_slots_block FOREIGN KEY (block_id) REFERENCES availability_blocks (id) ON DELETE CASCADE,
-    CONSTRAINT fk_slots_professional FOREIGN KEY (professional_id) REFERENCES professionals (user_id),
-    CONSTRAINT fk_slots_status FOREIGN KEY (status_id) REFERENCES slot_statuses (id),
-    CONSTRAINT fk_slots_appointment FOREIGN KEY (appointment_id) REFERENCES appointments (id),
-    CONSTRAINT fk_slots_reschedule FOREIGN KEY (reschedule_request_id) REFERENCES reschedule_requests (id),
-    CONSTRAINT uk_slots_professional_start UNIQUE (professional_id, start_at),
-    CONSTRAINT chk_slots_range CHECK (end_at > start_at),
-    CONSTRAINT chk_slots_single_holder CHECK (
-        (appointment_id IS NULL AND reschedule_request_id IS NULL)
-        OR (appointment_id IS NOT NULL AND reschedule_request_id IS NULL)
-        OR (appointment_id IS NULL AND reschedule_request_id IS NOT NULL)
-    )
-) ENGINE=InnoDB;
-
--- =========================================================================
--- 7. Auditoria de estados (RF-19, RN-11, RN-12)
--- =========================================================================
-
-CREATE TABLE appointment_status_history (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    appointment_id BIGINT NOT NULL,
-    status_id BIGINT NOT NULL,
-    actor_user_id CHAR(36) NULL,
-    source ENUM('SYSTEM', 'USER', 'ADMIN') NOT NULL,
-    reason VARCHAR(255) NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_status_history_appointment FOREIGN KEY (appointment_id) REFERENCES appointments (id),
-    CONSTRAINT fk_status_history_status FOREIGN KEY (status_id) REFERENCES appointment_statuses (id),
-    CONSTRAINT fk_status_history_actor FOREIGN KEY (actor_user_id) REFERENCES users (id),
-    KEY idx_status_history_appointment (appointment_id)
+    patient_action_after_rejection VARCHAR(30) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_reschedule_time
+        CHECK (requested_end_at > requested_start_at),
+    CONSTRAINT ck_reschedule_patient_action
+        CHECK (
+            patient_action_after_rejection IS NULL
+            OR patient_action_after_rejection IN ('KEEP_APPOINTMENT', 'CANCEL_APPOINTMENT')
+        ),
+    CONSTRAINT fk_reschedule_appointment
+        FOREIGN KEY (appointment_id) REFERENCES appointments(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_reschedule_requested_by
+        FOREIGN KEY (requested_by_user_id) REFERENCES users(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_reschedule_location
+        FOREIGN KEY (requested_location_id) REFERENCES locations(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_reschedule_status
+        FOREIGN KEY (status_id) REFERENCES reschedule_request_statuses(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_reschedule_decided_by
+        FOREIGN KEY (decided_by_user_id) REFERENCES users(id)
+        ON DELETE RESTRICT,
+    INDEX ix_reschedule_appointment (appointment_id),
+    INDEX ix_reschedule_status (status_id)
 ) ENGINE=InnoDB;

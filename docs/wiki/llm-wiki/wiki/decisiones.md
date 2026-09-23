@@ -87,6 +87,26 @@ El segundo export corrigió el dominio (marca "FCV Citas", `@fcv.org`, sede real
 
 **Pendiente, requiere confirmación del usuario** (bloqueado por el guardrail de acciones destructivas del propio agente, no por una restricción del proyecto): eliminar `BookingMatrixView.tsx`, `MyAppointmentsView.tsx`, `ProtocolsView.tsx`, `data/mockData.ts` (huérfanos, ya no se importan desde `App.tsx` pero siguen physically en el repo y romperían `tsc --noEmit` porque referencian tipos removidos de `types.ts`) y aplanar `citas-web/front/*` a la raíz de `citas-web/` (consistente con `citas-web/.env.example`/`.gitignore` ya existentes en la raíz). Build/typecheck no verificado: no hay Node.js instalado en esta máquina todavía.
 
+## 2026-09-23 — El esquema pasa a ser copia exacta de `database/reference/db.sql`
+
+**DECISIÓN explícita del usuario**, revierte parcialmente la del 2026-09-17 ("el agente sí diseña el modelo 3FN"): el usuario pidió que la base de datos quedara **exacta** a la referencia del trainer (`database/reference/db.sql`), no solo comparada/parcialmente alineada. Se le advirtió explícitamente que esto afecta código ya implementado y probado (HU-001/HU-002), no solo tablas sin construir todavía — el usuario confirmó que quería el alcance completo, incluyendo usuarios/refresh tokens.
+
+**Implementado:**
+
+- `V1__esquema_inicial.sql` reescrito como copia estructural de `db.sql` (mismos nombres de tabla/columna, mismos tipos `UNSIGNED`, mismas constraints/índices), sin las sentencias `CREATE DATABASE`/`USE`/`SET` (las gestiona la conexión).
+- `V2__seed_catalogos_fijos.sql` reescrito con los seeds de catálogo de `db.sql` (roles, regímenes, estados de cita, estados de reprogramación, sedes, especialidades). **Deliberadamente no** se copiaron los seeds sintéticos de operación de `db.sql` (profesionales/pacientes/citas/disponibilidad de ejemplo): no hay código ni HU aprobada que los use todavía.
+- Cambios de código Java para seguir el nuevo esquema:
+  - `users.id`: de UUID generado en `Usuario.registrarNuevo` a `BIGINT AUTO_INCREMENT` asignado por MySQL. El dominio ahora construye el agregado con `id = null`; `UsuarioRepositoryPort.guardar` devuelve el `Usuario` con el id ya poblado tras persistir.
+  - `UsuarioJpaEntity`/`UsuarioJpaRepository`: `id` pasa de `String` a `Long` con `@GeneratedValue(IDENTITY)`.
+  - `refresh_tokens`: de `id = jti` en claro a `id` autoincremental (surrogate) + `token_hash` (SHA-256 hexadecimal del `jti`, calculado en `RefreshTokenJpaAdapter`) como clave de búsqueda real.
+  - `InMemoryUsuarioRepositoryAdapter` (doble de prueba): ahora simula la asignación autoincremental de id al guardar, para que las pruebas reflejen el mismo contrato que el adaptador real.
+  - Pruebas ajustadas: `UsuarioTest` (el id es `null` hasta guardar), `RegistrarUsuarioServiceTest` (el mock de `guardar` simula la asignación de id), `IniciarSesionServiceTest`/`RenovarSesionServiceTest` (usan `Usuario.reconstruir` con un id fijo en vez de `Usuario.registrarNuevo`, porque representan un usuario ya persistido).
+- `MODELO_3FN.md` reescrito para describir el esquema adoptado (ya no es un diseño propio); `COMPARACION_REFERENCIA.md` conservado como registro histórico, con la sección "Decisión" actualizada para reflejar el cambio.
+
+**Diferencias funcionales reales frente al diseño anterior** (documentadas en `MODELO_3FN.md` sección 8, para que quien retome el proyecto las conozca): `professional_specialties.is_primary` perdió la garantía de unicidad a nivel de base de datos; los slots de disponibilidad perdieron el catálogo de estados y la retención real durante una reprogramación pendiente (RN-10 quedará como responsabilidad de la aplicación, no de la base, cuando se implemente EP-008); a cambio, se ganó historial de afiliación EPS y columnas de auditoría rápida en `appointments`.
+
+Evidencia: `mvn test` corrido tras el cambio — ver `wiki/log.md` para el resultado.
+
 ## Pendiente de diseño reservado al usuario
 
 - **Prototipado visual** (Skill `stitch-design-to-frontend`): pantallas obligatorias, aprobación explícita y handoff a Google AI Studio. No se generará ningún diseño visual ni se elegirá React/Angular en nombre del usuario.

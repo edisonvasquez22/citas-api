@@ -49,12 +49,17 @@ public class UsuarioJpaAdapter implements UsuarioRepositoryPort {
             .collect(Collectors.toSet());
 
         UsuarioJpaEntity entidad = new UsuarioJpaEntity(
-            usuario.getId(), usuario.getNombres(), usuario.getApellidos(), usuario.getTipoDocumento(),
+            usuario.getId() == null ? null : Long.valueOf(usuario.getId()),
+            usuario.getNombres(), usuario.getApellidos(), usuario.getTipoDocumento(),
             usuario.getNumeroDocumento(), usuario.getEmail(), usuario.getTelefono(), usuario.getPasswordHash(),
             usuario.isActivo(), rolesEntidad
         );
-        usuarioJpaRepository.save(entidad);
-        return usuario;
+        UsuarioJpaEntity guardada = usuarioJpaRepository.save(entidad);
+        return Usuario.reconstruir(
+            String.valueOf(guardada.getId()), usuario.getNombres(), usuario.getApellidos(),
+            usuario.getTipoDocumento(), usuario.getNumeroDocumento(), usuario.getEmail(), usuario.getTelefono(),
+            usuario.getPasswordHash(), usuario.getRoles(), usuario.isActivo()
+        );
     }
 
     @Override
@@ -67,7 +72,13 @@ public class UsuarioJpaAdapter implements UsuarioRepositoryPort {
 
     @Override
     public Optional<Usuario> buscarPorId(String id) {
-        return usuarioJpaRepository.findById(id).map(this::aDominio);
+        Long idNumerico;
+        try {
+            idNumerico = Long.valueOf(id);
+        } catch (NumberFormatException | NullPointerException e) {
+            return Optional.empty();
+        }
+        return usuarioJpaRepository.findById(idNumerico).map(this::aDominio);
     }
 
     private Usuario aDominio(UsuarioJpaEntity entidad) {
@@ -75,7 +86,7 @@ public class UsuarioJpaAdapter implements UsuarioRepositoryPort {
             .map(rolEntidad -> RolNombre.valueOf(rolEntidad.getCode()))
             .collect(Collectors.toCollection(() -> EnumSet.noneOf(RolNombre.class)));
         return Usuario.reconstruir(
-            entidad.getId(), entidad.getFirstName(), entidad.getLastName(), entidad.getDocumentType(),
+            String.valueOf(entidad.getId()), entidad.getFirstName(), entidad.getLastName(), entidad.getDocumentType(),
             entidad.getDocumentNumber(), entidad.getEmail(), entidad.getPhone(), entidad.getPasswordHash(),
             roles, entidad.isActive()
         );

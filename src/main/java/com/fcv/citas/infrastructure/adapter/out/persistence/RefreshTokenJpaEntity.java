@@ -2,21 +2,32 @@ package com.fcv.citas.infrastructure.adapter.out.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
-/** Mapea `refresh_tokens`. `id` es el `jti` del JWT (ver TokenProviderPort). */
+/**
+ * Mapea `refresh_tokens`. `id` es un autoincremental propio (surrogate key);
+ * la fila se busca/revoca por {@code token_hash} (SHA-256 del `jti` del JWT,
+ * ver RefreshTokenJpaAdapter), no por el id. `device_info` existe en el
+ * esquema pero no se usa todavía; se omite el mapeo (Hibernate en modo
+ * `validate` no exige mapear todas las columnas).
+ */
 @Entity
 @Table(name = "refresh_tokens")
 public class RefreshTokenJpaEntity {
 
     @Id
-    @Column(length = 36)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Column(name = "user_id", nullable = false, length = 36)
-    private String userId;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Column(name = "token_hash", nullable = false, length = 255)
+    private String tokenHash;
 
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
@@ -28,18 +39,22 @@ public class RefreshTokenJpaEntity {
         // JPA
     }
 
-    public RefreshTokenJpaEntity(String id, String userId, Instant expiresAt) {
-        this.id = id;
+    public RefreshTokenJpaEntity(Long userId, String tokenHash, Instant expiresAt) {
         this.userId = userId;
+        this.tokenHash = tokenHash;
         this.expiresAt = expiresAt;
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public String getUserId() {
+    public Long getUserId() {
         return userId;
+    }
+
+    public String getTokenHash() {
+        return tokenHash;
     }
 
     public Instant getExpiresAt() {

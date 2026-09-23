@@ -3,6 +3,8 @@ package com.fcv.citas.infrastructure.adapter.out.persistence;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
@@ -11,14 +13,14 @@ import jakarta.persistence.Table;
 import java.util.HashSet;
 import java.util.Set;
 
-/** Mapea la tabla `users` (RF-01). El id es el UUID que genera {@code Usuario.registrarNuevo}. */
+/** Mapea la tabla `users` (RF-01). El id es autoincremental (BIGINT UNSIGNED), lo asigna MySQL al guardar. */
 @Entity
 @Table(name = "users")
 public class UsuarioJpaEntity {
 
     @Id
-    @Column(length = 36)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
@@ -56,7 +58,7 @@ public class UsuarioJpaEntity {
         // JPA
     }
 
-    public UsuarioJpaEntity(String id, String firstName, String lastName, String documentType,
+    public UsuarioJpaEntity(Long id, String firstName, String lastName, String documentType,
                              String documentNumber, String email, String phone, String passwordHash,
                              boolean active, Set<RolJpaEntity> roles) {
         this.id = id;
@@ -71,7 +73,7 @@ public class UsuarioJpaEntity {
         this.roles = roles;
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
