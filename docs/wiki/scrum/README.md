@@ -64,7 +64,23 @@ Aprobado explícitamente por el usuario el 2026-09-17. En desarrollo:
 2. [[HU-001-registrar-usuario]] — RF-01.
 3. [[HU-002-login-y-sesion-jwt]] — RF-02 (access + refresh + logout).
 
-`HU-003` (recuperar contraseña) queda en `Borrador` para S4, tal como indica `GUIA_SESIONES_S2_S6.md`. El resto del backlog permanece en `Borrador`/`Pendiente de aprobación` hasta S3/S4.
+## Alcance aprobado para el incremento S3
+
+Aprobado explícitamente por el usuario el 2026-09-25 — el alcance completo que ya proponía este backlog para "Sprint 2 (objetivo S3)", sin recortes. En desarrollo:
+
+4. [[HU-009-administrar-catalogo-especialidades]] — RF-06/RF-09 (dependencia de HU-010).
+5. [[HU-010-registrar-profesional]] — RF-07.
+6. [[HU-011-activar-desactivar-profesional]] — RF-07.
+7. [[HU-012-gestionar-bloques-de-disponibilidad]] — RF-08, RN-06/RN-07.
+8. [[HU-013-consultar-disponibilidad]] — RF-10, RN-01/RN-05.
+9. [[HU-014-solicitar-cita-general]] — RF-11, RN-01/RN-02.
+10. [[HU-015-solicitar-cita-especializada]] — RF-12, RN-01/RN-03/RN-08.
+11. [[HU-016-aprobar-rechazar-cita-especializada]] — RF-12/RF-18, RN-03/RN-04/RN-09.
+12. [[HU-023-historial-de-estados-de-cita]] — RF-19, RN-11/RN-12 (transversal, usada por HU-014/015/016).
+
+Backend implementado y probado (`mvn test` 76/76). La UI correspondiente en `citas-web` no se implementó en S3: el diseño visual sigue reservado al usuario (Stitch/AI Studio) — ver `AGENTS.md` raíz regla 11 y `docs/wiki/llm-wiki/wiki/decisiones.md` (2026-09-25).
+
+`HU-003` (recuperar contraseña) queda en `Borrador` para S4, tal como indica `GUIA_SESIONES_S2_S6.md`. El resto del backlog (EP-002, EP-008 a EP-011) permanece en `Borrador`/`Pendiente de aprobación` hasta S4.
 
 ## Decisiones/incógnitas pendientes
 

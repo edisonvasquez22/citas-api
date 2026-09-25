@@ -2,7 +2,7 @@
 id: HU-014
 tipo: historia-de-usuario
 titulo: "Solicitar cita general con aprobación automática"
-estado: Borrador
+estado: "En desarrollo"
 epica: "[[EP-006-cita-general]]"
 esfuerzo: "Alto"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -87,24 +87,25 @@ RF-11. Es el primer flujo de creación de citas real del backlog; valida el circ
 
 ## Definition of Done
 
-- [ ] CA-01 a CA-03 validados con evidencia, incluyendo una prueba explícita de concurrencia/doble reserva.
-- [ ] Migración Flyway coherente con el diseño 3FN aprobado.
-- [ ] Transición de estado registrada en auditoría (RF-19).
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 a CA-03 validados con evidencia, incluyendo una prueba explícita de concurrencia/doble reserva.
+- [x] Migración Flyway coherente con el diseño 3FN aprobado.
+- [x] Transición de estado registrada en auditoría (RF-19).
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Pendiente | — | — |
-| CA-02 | Pendiente | — | — |
-| CA-03 | Pendiente | — | — |
-| DoD-01 | Pendiente | — | — |
+| CA-01 | Cumple | `SolicitarCitaGeneralServiceTest.solicitar_horarioDisponible_quedaApprovedYAuditado` | Auditoría verificada vía `HistorialEstadoCitaPort` |
+| CA-02 | Cumple | `SolicitarCitaGeneralServiceTest.solicitar_horarioYaTomado_lanzaHorarioNoDisponible` | — |
+| CA-03 | Cumple | `SolicitarCitaGeneralServiceTest.solicitar_bajoConcurrencia_soloUnaSolicitudGanaElHorario` (10 hilos reales vía `ExecutorService`, exactamente 1 éxito) | Demostrado explícitamente en Red→Green: se rompió a propósito el `compareAndSet` de la reserva atómica, la prueba falló (10 éxitos en vez de 1), y volvió a pasar al revertir — ver `docs/wiki/llm-wiki/wiki/log.md` (2026-09-25) |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente); la reserva atómica real usa `UPDATE ... WHERE appointment_id IS NULL` (bloqueo de fila InnoDB), no probado aún contra MySQL |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
+- 2026-09-25 — Aprobada explícitamente por el usuario como parte del alcance de S3; implementada y validada, incluida la prueba de doble reserva bajo concurrencia real que pide `GUIA_SESIONES_S2_S6.md`. Estado → `En desarrollo`.
 
 ## Notas y decisiones
 

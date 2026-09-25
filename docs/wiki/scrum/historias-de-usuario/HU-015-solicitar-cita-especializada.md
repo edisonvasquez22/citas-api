@@ -2,7 +2,7 @@
 id: HU-015
 tipo: historia-de-usuario
 titulo: "Solicitar cita especializada"
-estado: Borrador
+estado: "En desarrollo"
 epica: "[[EP-007-cita-especializada-y-aprobacion]]"
 esfuerzo: "Alto"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -88,24 +88,25 @@ RF-12. A diferencia de la cita general, nace en `REQUESTED` y retiene el horario
 
 ## Definition of Done
 
-- [ ] CA-01 a CA-03 validados con evidencia, incluyendo una prueba explícita de concurrencia/doble reserva.
-- [ ] Migración Flyway coherente con el diseño 3FN aprobado.
-- [ ] Transición de estado registrada en auditoría (RF-19).
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 a CA-03 validados con evidencia, incluyendo una prueba explícita de concurrencia/doble reserva.
+- [x] Migración Flyway coherente con el diseño 3FN aprobado.
+- [x] Transición de estado registrada en auditoría (RF-19).
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Pendiente | — | — |
-| CA-02 | Pendiente | — | — |
-| CA-03 | Pendiente | — | — |
-| DoD-01 | Pendiente | — | — |
+| CA-01 | Cumple | `SolicitarCitaEspecializadaServiceTest.solicitar_conEspecialidadAsociadaYHorarioLibre_naceEnRequested` | — |
+| CA-02 | Cumple | `SolicitarCitaEspecializadaServiceTest.solicitar_conEspecialidadNoAsociadaAlProfesional_seRechaza`, `.solicitar_conEspecialidadInactiva_seRechaza` | — |
+| CA-03 | Cumple | `SolicitarCitaEspecializadaServiceTest.solicitar_bajoConcurrencia_soloUnaSolicitudRetieneElHorario` (10 hilos reales, exactamente 1 éxito) | Mismo mecanismo y misma demostración Red→Green que HU-014 — ver `docs/wiki/llm-wiki/wiki/log.md` (2026-09-25) |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente) |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
+- 2026-09-25 — Aprobada explícitamente por el usuario como parte del alcance de S3; implementada y validada. Estado → `En desarrollo`.
 
 ## Notas y decisiones
 

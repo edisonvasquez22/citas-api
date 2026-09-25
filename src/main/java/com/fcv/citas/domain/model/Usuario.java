@@ -63,6 +63,27 @@ public final class Usuario {
     }
 
     /**
+     * RF-07: crea la cuenta de un profesional nuevo (rol PROFESSIONAL en vez de
+     * USER). Usada por HU-010 antes de asignarle especialidades/sedes.
+     */
+    public static Usuario registrarProfesional(String nombres, String apellidos, String tipoDocumento,
+                                                String numeroDocumento, String email, String telefono,
+                                                String passwordHash) {
+        requerirNoVacio(nombres, "nombres");
+        requerirNoVacio(apellidos, "apellidos");
+        requerirNoVacio(tipoDocumento, "tipoDocumento");
+        requerirNoVacio(numeroDocumento, "numeroDocumento");
+        requerirNoVacio(telefono, "telefono");
+        requerirEmailValido(email);
+        if (passwordHash == null || passwordHash.isBlank()) {
+            throw new IllegalArgumentException("passwordHash no puede estar vacío");
+        }
+        String emailNormalizado = email.trim().toLowerCase(Locale.ROOT);
+        return new Usuario(null, nombres.trim(), apellidos.trim(), tipoDocumento.trim(), numeroDocumento.trim(),
+            emailNormalizado, telefono.trim(), passwordHash, EnumSet.of(RolNombre.PROFESSIONAL), true);
+    }
+
+    /**
      * Reconstituye un Usuario ya existente desde persistencia (adaptador JPA).
      * A diferencia de {@link #registrarNuevo}, no genera un id nuevo ni fuerza
      * el rol USER por defecto: respeta exactamente lo que hay guardado.

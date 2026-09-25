@@ -107,6 +107,37 @@ El segundo export corrigió el dominio (marca "FCV Citas", `@fcv.org`, sede real
 
 Evidencia: `mvn test` corrido tras el cambio — ver `wiki/log.md` para el resultado.
 
+## 2026-09-25 — Alcance de S3 aprobado explícitamente por el usuario
+
+**DECISIÓN, confirmada explícitamente por el usuario.** Se presentaron las 9 HU que el backlog ya proponía para "Sprint 2 (objetivo S3)" — HU-009, HU-010, HU-011, HU-012, HU-013, HU-014, HU-015, HU-016 y HU-023 — y el usuario aprobó el alcance completo tal como estaba, sin recortes. Pasan de `Borrador` a `En desarrollo`. Coincide exactamente con la "Funcionalidad objetivo" de `GUIA_SESIONES_S2_S6.md` S3 (profesionales, disponibilidad, cita general auto-aprobada, cita especializada + aprobación) más HU-009 (dependencia formal de HU-010: solo se pueden asignar especialidades activas) y HU-023 (auditoría transversal que HU-014/015/016 necesitan para RN-11/RN-12).
+
+## 2026-09-25 — Backend de S3 implementado: profesionales, disponibilidad y flujo de citas
+
+**HECHO.** Implementadas las 9 HU aprobadas en `citas-api`, siguiendo el mismo patrón hexagonal que HU-001/002 (dominio sin dependencias de Spring, puertos in/out, adaptadores JPA reales `@Profile("!test")` + dobles en memoria para pruebas). Piezas nuevas relevantes:
+
+- **Reserva atómica de horario (RN-01)**: `SlotRepositoryPort.reservarAtomicamente` — el adaptador JPA hace un `UPDATE professional_slots SET appointment_id = :citaId WHERE id IN (:ids) AND appointment_id IS NULL`, que toma bloqueo de fila real en MySQL/InnoDB; el doble en memoria de pruebas simula la misma atomicidad con compare-and-set por slot. Probado con hilos concurrentes reales (no mocks): 10 solicitudes simultáneas sobre el mismo horario, exactamente 1 gana (`SolicitarCitaGeneralServiceTest`/`SolicitarCitaEspecializadaServiceTest`). Es la prueba de "doble reserva" que pide explícitamente `GUIA_SESIONES_S2_S6.md` para S3.
+- **Motivo de rechazo de cita especializada**: `appointments` (copia exacta de `database/reference/db.sql`) no tiene columna propia para el motivo de un rechazo — se audita en `appointment_status_history.reason` (HU-023) en vez de duplicarse en la tabla de citas. La respuesta inmediata de `POST /api/admin/appointments/{id}/reject` sí lo devuelve (viene del parámetro de la petición, no de un roundtrip a la base).
+- **Autorización por rol**: `/api/admin/**` exige `ADMIN`, `/api/professionals/me/**` exige `PROFESSIONAL` (vía `hasRole` en `SecurityConfig`, usando los `ROLE_*` que ya emite `JwtAuthenticationFilter`). Al escribir las pruebas de autorización se encontró que, sin un `authenticationEntryPoint` explícito, una request **sin token** también devolvía `403` en vez de `401` (Spring Security trata al anónimo como "autenticado sin permiso" por defecto en endpoints con `hasRole`). Corregido agregando `exceptionHandling().authenticationEntryPoint(...)` — ahora sí distingue `401` (sin token/token inválido) de `403` (token válido, rol insuficiente), consistente con la convención ya documentada en `contratos.md` desde S2.
+- **`professional_specialties.is_primary` sin unicidad a nivel de BD**: a diferencia del diseño propio descartado (ver 2026-09-23), el esquema de referencia no tiene una columna generada que garantice una sola especialidad primaria por profesional — la regla (HU-010 CA-02) se aplica solo en `Profesional.registrar` (dominio). Documentado en `riesgos.md`.
+- **HU-009 (catálogo de especialidades)**: no se expone `DELETE` — el catálogo solo permite crear/editar/activar/desactivar; la ausencia misma del endpoint satisface CA-03 (no hay forma de borrar físicamente).
+
+**Evidencia:** `mvn test` — 76 pruebas (67 nuevas de S3 + las 9 de S2), incluyendo la prueba de concurrencia real. Detalle completo en `wiki/log.md`.
+
+**No implementado en esta pasada (ver `AGENTS.md` raíz, regla 11):** ninguna pantalla de `citas-web` para profesionales/disponibilidad/reserva de citas — el diseño visual sigue siendo responsabilidad exclusiva del usuario (Stitch/AI Studio). `GOAL_02_GUIADO_AVANZADO.md` (que la guía sugiere para S3) exige explícitamente que el frontend envíe la solicitud real y muestre la respuesta, así que **no se ejecuta como verificación formal todavía** — solo su mitad backend está completa y probada. Se retomará cuando el usuario traiga el export de AI Studio para "Agendar Cita" (ver pendiente anotado el 2026-09-23) y se pueda reconciliar contra estos endpoints reales, igual que se hizo con login/registro.
+
+**Verificación contra MySQL real:** sigue bloqueada por Docker (ver pendiente de siempre). Todo lo anterior corre y se probó contra los dobles en memoria de `testsupport/`.
+
+## 2026-09-25 — Pantalla "Agendar Cita" reconciliada en citas-web contra el backend real de S3
+
+**HECHO.** El usuario trajo el export de AI Studio para la pantalla de "Agendar Cita" (prompt entregado en la sesión anterior). Se reconcilió con el mismo rigor que login/registro:
+
+- **Descartado** (fuera del alcance pedido/aprobado): pestañas "Mis Citas" (HU-017 sin aprobar), "Resultados" de laboratorio/imágenes (**ninguna HU del backlog de 24 HU cubre esto** — invención de AI Studio, no PRD), "Sedes" y "Ayuda" (sin HU); el `SimStrip` (selector manual de estados, scaffolding de demo); `PatientRibbon`/`PatientModal` con datos de paciente inventados (biometría, número de historia clínica, plan — no existen en la API real, no hay endpoint de perfil).
+- **Integrado**: el formulario de agendar cita, con datos 100% reales (`GET /api/specialties`, `GET /api/professionals`, `GET /api/availability`) y envío real (`POST /api/appointments/general`/`specialized`), más las pantallas de confirmación (aprobada / pendiente de auditoría) y de "sin turnos disponibles".
+- **Cambio cross-repo en `citas-api`**: se agregó `GET /api/professionals` (lectura pública) porque no existía ningún endpoint que un paciente pudiera usar para ver el nombre de un profesional al reservar — la única alternativa era `/api/admin/professionals` (solo ADMIN). Ver `contratos.md`.
+- Campos inventados descartados: el "código de cita" con formato bonito (`FCV-GEN-89421`) no existe en el contrato real — se usa el `citaId` numérico real; el campo `prep` (preparación previa) tampoco existe en `specialties` — se quitó en vez de inventarlo.
+
+**Evidencia:** `npm run lint`/`npm run build` en `EXIT 0`. **No verificado con navegador real (Playwright)** — esta sesión no tuvo esa herramienta disponible, y de todas formas el backend no puede correr en vivo sin MySQL real (los dobles en memoria de `testsupport/` solo existen dentro de `@SpringBootTest`, no en un servidor real) — mismo bloqueo de Docker de siempre. La cobertura HTTP real más cercana disponible es `S3AuthorizationIntegrationTest`/`AuthFlowIntegrationTest` (MockMvc), que sí ejercitan la capa REST completa.
+
 ## Pendiente de diseño reservado al usuario
 
 - **Prototipado visual** (Skill `stitch-design-to-frontend`): pantallas obligatorias, aprobación explícita y handoff a Google AI Studio. No se generará ningún diseño visual ni se elegirá React/Angular en nombre del usuario.

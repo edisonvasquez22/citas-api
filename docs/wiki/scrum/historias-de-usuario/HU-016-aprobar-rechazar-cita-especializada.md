@@ -2,7 +2,7 @@
 id: HU-016
 tipo: historia-de-usuario
 titulo: "Aprobar/rechazar solicitudes especializadas"
-estado: Borrador
+estado: "En desarrollo"
 epica: "[[EP-007-cita-especializada-y-aprobacion]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -95,24 +95,25 @@ RF-12 (decisión) + RF-18 (bandeja). El rechazo exige motivo y libera los slots 
 
 ## Definition of Done
 
-- [ ] CA-01 a CA-04 validados con evidencia.
-- [ ] Transición de estado registrada en auditoría (RF-19), incluyendo el motivo cuando aplica.
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 a CA-04 validados con evidencia.
+- [x] Transición de estado registrada en auditoría (RF-19), incluyendo el motivo cuando aplica.
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Pendiente | — | — |
-| CA-02 | Pendiente | — | — |
-| CA-03 | Pendiente | — | — |
-| CA-04 | Pendiente | — | — |
-| DoD-01 | Pendiente | — | — |
+| CA-01 | Cumple | `GestionarSolicitudesEspecializadasServiceTest.aprobar_solicitudRequested_pasaAApproved` | — |
+| CA-02 | Cumple | `GestionarSolicitudesEspecializadasServiceTest.rechazar_conMotivo_pasaARejectedYLiberaElHorario` | El motivo se audita en `appointment_status_history.reason` (HU-023); `appointments` no tiene columna propia para él |
+| CA-03 | Cumple | `GestionarSolicitudesEspecializadasServiceTest.rechazar_sinMotivo_seRechaza` | — |
+| CA-04 | Cumple | `GestionarSolicitudesEspecializadasServiceTest.listarSolicitudes_filtraPorSedeYSoloDevuelveRequested` | — |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente) |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
+- 2026-09-25 — Aprobada explícitamente por el usuario como parte del alcance de S3; implementada y validada. Estado → `En desarrollo`.
 
 ## Notas y decisiones
 

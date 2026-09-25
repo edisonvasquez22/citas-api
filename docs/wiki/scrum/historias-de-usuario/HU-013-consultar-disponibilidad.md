@@ -2,7 +2,7 @@
 id: HU-013
 tipo: historia-de-usuario
 titulo: "Consultar disponibilidad de horarios"
-estado: Borrador
+estado: "En desarrollo"
 epica: "[[EP-005-agenda-y-disponibilidad]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -81,22 +81,23 @@ RF-10. Solo deben mostrarse horarios que puedan completar toda la duración requ
 
 ## Definition of Done
 
-- [ ] CA-01 y CA-02 validados con evidencia.
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Contrato reflejado en [[HU-024-contrato-rest-citas-api]].
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 y CA-02 validados con evidencia.
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Contrato reflejado en [[HU-024-contrato-rest-citas-api]] (ver `docs/wiki/llm-wiki/wiki/contratos.md`).
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Pendiente | — | — |
-| CA-02 | Pendiente | — | — |
-| DoD-01 | Pendiente | — | — |
+| CA-01 | Cumple | `ConsultarDisponibilidadServiceTest.consultar_especialidad30Min_devuelveCadaSlotSueltoComoVentana` | — |
+| CA-02 | Cumple | `ConsultarDisponibilidadServiceTest.consultar_especialidad60Min_conSoloUnSlotSueltoLibre_noOfreceEsaVentana` | — |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente) |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
+- 2026-09-25 — Aprobada explícitamente por el usuario como parte del alcance de S3; implementada y validada. Estado → `En desarrollo`.
 
 ## Notas y decisiones
 

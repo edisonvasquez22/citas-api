@@ -1,20 +1,20 @@
 # AGENTS.md — `citas-api`
 
-> Generado a partir de `../prompts/agents/PROMPT_AGENT_CITAS_API.md` una vez inicializado el proyecto Spring Boot real (2026-09-17). Reemplaza a `AGENTS.md.template`. Revisado/depurado contra evidencia real del repo el 2026-09-21 (sin cambios de código desde el 17; solo se confirmó vigencia).
+> Generado a partir de `../prompts/agents/PROMPT_AGENT_CITAS_API.md` una vez inicializado el proyecto Spring Boot real (2026-09-17). Reemplaza a `AGENTS.md.template`. Actualizado tras el incremento S3 (2026-09-25).
 
 ## Responsabilidad de este repo
 
 - Java 21, Spring Boot 3.5.16, Maven.
 - Arquitectura hexagonal (`domain` / `application` / `infrastructure`).
 - REST/JSON.
-- Spring Security + JWT access/refresh (implementado en HU-002 con rotación de refresh token).
+- Spring Security + JWT access/refresh (implementado en HU-002 con rotación de refresh token); autorización por rol (`hasRole`) para `/api/admin/**` (ADMIN) y `/api/professionals/me/**` (PROFESSIONAL), agregada en S3.
 - MySQL 8.4 + Spring Data JPA + Flyway, con esquema real (`V1__esquema_inicial.sql`, `V2__seed_catalogos_fijos.sql`; ver `docs/db-design/MODELO_3FN.md`).
 - Reglas de negocio del PRD, HU por HU.
 - Pruebas de dominio, aplicación e integración.
 
-**Estado verificado (2026-09-21):** `mvn test` da `BUILD SUCCESS` con **15/15 pruebas** (dominio + aplicación + integración `AuthFlowIntegrationTest`), corrido repetidas veces con JDK 21 + Maven 3.9.16 reales. `GOAL_01_GUIADO_SIMPLE.md` ejecutado como verificación formal de HU-001/HU-002: **PASS** (ver `docs/wiki/scrum/historias-de-usuario/HU-002-login-y-sesion-jwt.md`). Sigue sin verificarse contra MySQL real (Docker instalado pero no operativo todavía) — todo lo anterior corre con los dobles en memoria de pruebas.
+**Estado verificado (2026-09-25), incremento S3:** `mvn test` da `BUILD SUCCESS` con **76/76 pruebas** (9 de S2 + 67 nuevas: dominio, casos de uso con dobles en memoria, integración MockMvc incluyendo autorización por rol). Incluye una prueba de concurrencia real (10 hilos disputando el mismo horario) para la retención atómica anti doble-reserva de HU-014/HU-015 (RN-01), demostrada explícitamente en Red→Green (ver `docs/wiki/llm-wiki/wiki/log.md`, 2026-09-25). Sigue sin verificarse contra MySQL real (Docker instalado pero no operativo todavía) — todo corre con los dobles en memoria de `src/test/java/.../testsupport/`.
 
-**Estado verificado (2026-09-23), tras adoptar el esquema exacto de `database/reference/db.sql`:** `mvn test` reconfirmado en `BUILD SUCCESS`, **15/15 pruebas**, incluyendo `UsuarioTest`/`RegistrarUsuarioServiceTest`/`IniciarSesionServiceTest`/`RenovarSesionServiceTest` actualizados a la nueva semántica de id autoincremental. Sigue sin verificarse contra MySQL real.
+**Historial:** 2026-09-21 (15/15, HU-001/HU-002, GOAL_01 PASS) → 2026-09-23 (15/15, tras adoptar el esquema exacto de `database/reference/db.sql`) → 2026-09-25 (76/76, S3 completo: HU-009/010/011/012/013/014/015/016/023).
 
 ## Reglas arquitectónicas (verificadas contra el código real)
 
@@ -32,7 +32,9 @@
 
 Cambio importante para quien toque `users`/`refresh_tokens`: `users.id` ahora es `BIGINT UNSIGNED AUTO_INCREMENT` (antes UUID generado en dominio) — `Usuario.registrarNuevo` construye el agregado con `id = null`, y `UsuarioRepositoryPort.guardar` es quien devuelve el `Usuario` con el id ya asignado. `refresh_tokens` se identifica por `token_hash` (SHA-256 del `jti`), no por el `jti` en claro.
 
-Solo hay `@Entity`/repositorio/adaptador JPA para lo que las HU aprobadas necesitan (`users`, `roles`, `refresh_tokens` — HU-001/HU-002/HU-006). Antes de implementar una HU nueva (EP-002 en adelante), verifica si la tabla que necesita ya existe en `V1` (probablemente sí) y limítate a agregar el `@Entity`/adaptador correspondiente, no una migración de estructura nueva.
+**2026-09-25 — S3 agrega `@Entity`/adaptador para:** `specialties` (HU-009), `locations` de solo lectura (HU-006/010), `professionals` + `professional_specialties`/`professional_locations` vía `@ElementCollection` (HU-010/011), `availability_blocks` + `professional_slots` (HU-012/013), `appointments` + `appointment_statuses` de solo lectura (HU-014/015/016), `appointment_status_history` (HU-023, solo insert/lectura, sin update/delete — RN-12). La reserva atómica de slots (RN-01) es un `UPDATE professional_slots ... WHERE appointment_id IS NULL` en `ProfessionalSlotJpaRepository.reservarAtomicamente`, no una transacción con `SELECT` previo. `appointments` no tiene columna propia para el motivo de rechazo: vive en `appointment_status_history.reason`.
+
+Antes de implementar una HU nueva (S4 en adelante), verifica si la tabla que necesita ya existe en `V1` (probablemente sí) y limítate a agregar el `@Entity`/adaptador correspondiente, no una migración de estructura nueva.
 
 Los adaptadores JPA (`UsuarioJpaAdapter`, `RefreshTokenJpaAdapter`, en `infrastructure/adapter/out/persistence/`) están anotados `@Profile("!test")`. Las pruebas usan dobles en memoria de `src/test/java/.../testsupport/` (importados vía `InMemoryPersistenceTestConfig`) porque no hay MySQL disponible para pruebas de integración en este entorno; si el estudiante tiene Docker, considera migrar esas pruebas a un perfil de integración real (p. ej. Testcontainers) en vez de mantener el doble en memoria indefinidamente.
 

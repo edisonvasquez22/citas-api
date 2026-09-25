@@ -2,7 +2,7 @@
 id: HU-012
 tipo: historia-de-usuario
 titulo: "Gestionar bloques de disponibilidad del profesional"
-estado: Borrador
+estado: "En desarrollo"
 epica: "[[EP-005-agenda-y-disponibilidad]]"
 esfuerzo: "Alto"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -106,25 +106,26 @@ RF-08. Ejemplo de un día válido: 08:00–12:00 HIC y 14:00–17:00 HIC. Cada b
 
 ## Definition of Done
 
-- [ ] CA-01 a CA-05 validados con evidencia.
-- [ ] Migración Flyway coherente con el diseño 3FN aprobado.
-- [ ] `mvn test` pasa para los módulos afectados, incluida al menos una prueba de solapamiento.
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 a CA-05 validados con evidencia.
+- [x] Migración Flyway coherente con el diseño 3FN aprobado.
+- [x] `mvn test` pasa para los módulos afectados, incluida al menos una prueba de solapamiento.
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Pendiente | — | — |
-| CA-02 | Pendiente | — | — |
-| CA-03 | Pendiente | — | — |
-| CA-04 | Pendiente | — | — |
-| CA-05 | Pendiente | — | — |
-| DoD-01 | Pendiente | — | — |
+| CA-01 | Cumple | `GestionarBloquesDisponibilidadServiceTest.crear_bloqueValido_quedaCreado`, `BloqueDisponibilidadTest.generarSlots_discretizaEnBloquesDe30Minutos` | — |
+| CA-02 | Cumple | `GestionarBloquesDisponibilidadServiceTest.crear_enElPasado_seRechaza`, `BloqueDisponibilidadTest.crear_enElPasado_lanzaValidacionNegocio` | — |
+| CA-03 | Cumple | `GestionarBloquesDisponibilidadServiceTest.crear_solapadoConOtroBloquePropio_seRechaza`, `BloqueDisponibilidadTest.seSolapaCon_*` | — |
+| CA-04 | Cumple | `GestionarBloquesDisponibilidadServiceTest.crear_enSedeNoHabilitada_seRechaza` | — |
+| CA-05 | Cumple | `GestionarBloquesDisponibilidadServiceTest.eliminar_bloqueConCitaComprometida_seRechaza`, `.editar_bloqueConCitaComprometida_seRechaza` | — |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente) |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
+- 2026-09-25 — Aprobada explícitamente por el usuario como parte del alcance de S3; implementada y validada. Estado → `En desarrollo`.
 
 ## Notas y decisiones
 

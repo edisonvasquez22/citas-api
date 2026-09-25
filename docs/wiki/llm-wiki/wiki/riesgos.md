@@ -1,13 +1,13 @@
 ---
 tipo: wiki
-actualizado: 2026-09-21
+actualizado: 2026-09-25
 ---
 
 # Riesgos e incógnitas
 
 ## Riesgos técnicos
 
-- **Doble reserva de slots**: RN-01/RN-05 requieren retención atómica de slots al solicitar/confirmar una cita. Debe probarse explícitamente en S3 (ver `HU-014`, `HU-015`).
+- ~~**Doble reserva de slots**~~: **RESUELTO en S3** (2026-09-25). `SlotRepositoryPort.reservarAtomicamente` implementa la retención con un `UPDATE ... WHERE appointment_id IS NULL` (bloqueo de fila real en MySQL/InnoDB); probado explícitamente con hilos concurrentes reales en `SolicitarCitaGeneralServiceTest`/`SolicitarCitaEspecializadaServiceTest` (10 hilos disputando el mismo horario, exactamente 1 gana). Sigue pendiente reconfirmar el mismo comportamiento contra MySQL real cuando Docker esté operativo (hoy solo se probó contra el doble en memoria).
 - **Reprogramación concurrente**: RN-10 exige que la cita original sobreviva mientras la reprogramación está `PENDING`; riesgo de perder la cita original si la transacción no es atómica.
 - **Docker todavía no operativo**: JDK/Maven/Git/Node ya están instalados y verificados en la máquina del estudiante (`mvn test` 15/15, `npm run build` sin errores). Docker Desktop está instalado pero falta que el estudiante complete el reinicio de Windows + configuración de WSL2 (acción manual, no automatizable). Mientras tanto, `V1`/`V2` y los adaptadores JPA nunca se han probado contra un MySQL real. Ver [[decisiones]].
 
@@ -21,8 +21,8 @@ actualizado: 2026-09-21
 
 `V1__esquema_inicial.sql` y `V2__seed_catalogos_fijos.sql` nunca se ejecutaron contra un MySQL real (sin Docker/JDK en el entorno de generación, ver [[decisiones]]). Riesgos concretos a validar apenas el estudiante tenga Docker corriendo:
 
-- La columna generada `professional_specialties.primary_flag` (truco para "solo una especialidad primaria") depende de sintaxis de columnas generadas de MySQL 8; verificar que `CREATE TABLE` no falle contra MySQL 8.4 real.
-- Los `CHECK` constraints (rangos de fecha, duración 30/60, único holder de slot) se declaran asumiendo MySQL ≥ 8.0.16 (donde se empiezan a **aplicar**, no solo aceptar la sintaxis); confirmarlo.
+- `professional_specialties.is_primary` **no tiene garantía de unicidad a nivel de base de datos** en el esquema adoptado de `database/reference/db.sql` (a diferencia del diseño propio descartado el 2026-09-23, que sí la tenía vía columna generada). La regla "exactamente una especialidad primaria por profesional" (HU-010 CA-02) se aplica **solo en el dominio** (`Profesional.registrar`), no en la base — ver `MODELO_3FN.md` sección 8.
+- Los `CHECK` constraints (rangos de fecha, duración 30/60, horario de slot) se declaran asumiendo MySQL ≥ 8.0.16 (donde se empiezan a **aplicar**, no solo aceptar la sintaxis); confirmarlo.
 - El orden de `CREATE TABLE` en `V1` fue pensado para resolver FKs sin ciclos; si se edita el archivo, mantener el orden o Flyway fallará a mitad de migración.
 
 ## Contenido no confiable (recordatorio para S5)

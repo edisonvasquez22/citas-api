@@ -2,7 +2,7 @@
 id: HU-023
 tipo: historia-de-usuario
 titulo: "Registrar y consultar historial de estados de una cita"
-estado: Borrador
+estado: "En desarrollo"
 epica: "[[EP-010-auditoria-de-estados]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -92,25 +92,26 @@ RF-19. Es un componente transversal usado por todas las HU que producen una tran
 
 ## Definition of Done
 
-- [ ] CA-01 a CA-03 validados con evidencia.
-- [ ] Migración Flyway coherente con el diseño 3FN aprobado.
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Al menos una HU consumidora (p. ej. [[HU-014-solicitar-cita-general]]) demuestra la integración end-to-end.
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 y CA-02 validados con evidencia. CA-03 (lectura por ownership vía API) queda pendiente de HU-017/HU-021 — ver Notas.
+- [x] Migración Flyway coherente con el diseño 3FN aprobado.
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Al menos una HU consumidora (p. ej. [[HU-014-solicitar-cita-general]]) demuestra la integración end-to-end.
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Pendiente | — | — |
-| CA-02 | Pendiente | — | — |
-| CA-03 | Pendiente | — | — |
-| DoD-01 | Pendiente | — | — |
+| CA-01 | Cumple | `SolicitarCitaGeneralServiceTest.solicitar_horarioDisponible_quedaApprovedYAuditado`, y HU-014/HU-015/HU-016 registran vía `HistorialEstadoCitaPort` en cada transición | — |
+| CA-02 | Cumple | `HistorialEstadoCitaPort` no declara ningún método de edición/borrado (solo `registrar`/`listarPorCita`); no existe ningún endpoint REST que lo permita | — |
+| CA-03 | **Parcial** | — | El registro y la retención del historial funcionan; su **exposición por API filtrada por ownership** depende de endpoints que no son parte del alcance de S3 (HU-017 "mis citas", HU-021 "agenda del profesional"). Se retoma cuando esas HU se aprueben. |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente) |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
+- 2026-09-25 — Aprobada explícitamente por el usuario como parte del alcance de S3; implementada como componente transversal usado por HU-014/HU-015/HU-016. Estado → `En desarrollo`. CA-03 queda parcial a la espera de HU-017/HU-021.
 
 ## Notas y decisiones
 
-- Se recomienda implementar esta HU en paralelo con [[HU-014-solicitar-cita-general]] (Sprint 2), ya que esa es la primera transición de estado real del sistema.
+- Implementada en paralelo con [[HU-014-solicitar-cita-general]], tal como recomendaba esta HU.
