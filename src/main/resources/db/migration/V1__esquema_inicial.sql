@@ -9,7 +9,7 @@
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS roles (
-    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(30) NOT NULL UNIQUE,
     name VARCHAR(80) NOT NULL,
     description VARCHAR(255) NULL
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS user_roles (
     user_id BIGINT UNSIGNED NOT NULL,
-    role_id SMALLINT UNSIGNED NOT NULL,
+    role_id BIGINT UNSIGNED NOT NULL,
     assigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, role_id),
     CONSTRAINT fk_user_roles_user
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS insurance_regimes (
-    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(30) NOT NULL UNIQUE,
     name VARCHAR(80) NOT NULL
 ) ENGINE=InnoDB;
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS eps (
 CREATE TABLE IF NOT EXISTS eps_plans (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     eps_id BIGINT UNSIGNED NOT NULL,
-    regime_id SMALLINT UNSIGNED NOT NULL,
+    regime_id BIGINT UNSIGNED NOT NULL,
     code VARCHAR(50) NOT NULL,
     name VARCHAR(150) NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS user_insurance_affiliations (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS locations (
-    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(30) NOT NULL UNIQUE,
     name VARCHAR(180) NOT NULL,
     address VARCHAR(255) NOT NULL,
@@ -148,10 +148,10 @@ CREATE TABLE IF NOT EXISTS locations (
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS specialties (
-    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(150) NOT NULL UNIQUE,
-    appointment_duration_minutes SMALLINT UNSIGNED NOT NULL,
+    appointment_duration_minutes INT UNSIGNED NOT NULL,
     is_general BOOLEAN NOT NULL DEFAULT FALSE,
     requires_admin_approval BOOLEAN NOT NULL DEFAULT TRUE,
     active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -174,7 +174,7 @@ CREATE TABLE IF NOT EXISTS professionals (
 
 CREATE TABLE IF NOT EXISTS professional_specialties (
     professional_id BIGINT UNSIGNED NOT NULL,
-    specialty_id SMALLINT UNSIGNED NOT NULL,
+    specialty_id BIGINT UNSIGNED NOT NULL,
     is_primary BOOLEAN NOT NULL DEFAULT FALSE,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY (professional_id, specialty_id),
@@ -188,7 +188,7 @@ CREATE TABLE IF NOT EXISTS professional_specialties (
 
 CREATE TABLE IF NOT EXISTS professional_locations (
     professional_id BIGINT UNSIGNED NOT NULL,
-    location_id SMALLINT UNSIGNED NOT NULL,
+    location_id BIGINT UNSIGNED NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY (professional_id, location_id),
     CONSTRAINT fk_prof_location_professional
@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS professional_locations (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS appointment_statuses (
-    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(40) NOT NULL UNIQUE,
     name VARCHAR(80) NOT NULL,
     is_terminal BOOLEAN NOT NULL DEFAULT FALSE
@@ -214,10 +214,10 @@ CREATE TABLE IF NOT EXISTS appointments (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     patient_user_id BIGINT UNSIGNED NOT NULL,
     professional_id BIGINT UNSIGNED NOT NULL,
-    location_id SMALLINT UNSIGNED NOT NULL,
-    specialty_id SMALLINT UNSIGNED NOT NULL,
+    location_id BIGINT UNSIGNED NOT NULL,
+    specialty_id BIGINT UNSIGNED NOT NULL,
     insurance_affiliation_id BIGINT UNSIGNED NULL,
-    status_id SMALLINT UNSIGNED NOT NULL,
+    status_id BIGINT UNSIGNED NOT NULL,
     reason VARCHAR(500) NULL,
     scheduled_start_at DATETIME NOT NULL,
     scheduled_end_at DATETIME NOT NULL,
@@ -260,7 +260,7 @@ CREATE TABLE IF NOT EXISTS appointments (
 CREATE TABLE IF NOT EXISTS availability_blocks (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     professional_id BIGINT UNSIGNED NOT NULL,
-    location_id SMALLINT UNSIGNED NOT NULL,
+    location_id BIGINT UNSIGNED NOT NULL,
     available_date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
@@ -306,7 +306,7 @@ CREATE TABLE IF NOT EXISTS professional_slots (
 CREATE TABLE IF NOT EXISTS appointment_status_history (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     appointment_id BIGINT UNSIGNED NOT NULL,
-    status_id SMALLINT UNSIGNED NOT NULL,
+    status_id BIGINT UNSIGNED NOT NULL,
     changed_by_user_id BIGINT UNSIGNED NULL,
     change_source VARCHAR(20) NOT NULL DEFAULT 'USER',
     reason VARCHAR(500) NULL,
@@ -326,7 +326,7 @@ CREATE TABLE IF NOT EXISTS appointment_status_history (
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS reschedule_request_statuses (
-    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(40) NOT NULL UNIQUE,
     name VARCHAR(80) NOT NULL,
     is_terminal BOOLEAN NOT NULL DEFAULT FALSE
@@ -336,8 +336,8 @@ CREATE TABLE IF NOT EXISTS reschedule_requests (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     appointment_id BIGINT UNSIGNED NOT NULL,
     requested_by_user_id BIGINT UNSIGNED NOT NULL,
-    requested_location_id SMALLINT UNSIGNED NOT NULL,
-    status_id SMALLINT UNSIGNED NOT NULL,
+    requested_location_id BIGINT UNSIGNED NOT NULL,
+    status_id BIGINT UNSIGNED NOT NULL,
     previous_start_at DATETIME NOT NULL,
     previous_end_at DATETIME NOT NULL,
     requested_start_at DATETIME NOT NULL,
