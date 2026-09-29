@@ -64,6 +64,11 @@ public class ProfesionalJpaAdapter implements ProfesionalRepositoryPort {
         return profesionalJpaRepository.findByActiveTrue().stream().map(this::aDominio).toList();
     }
 
+    @Override
+    public List<Profesional> listarTodos() {
+        return profesionalJpaRepository.findAll().stream().map(this::aDominio).toList();
+    }
+
     private Profesional aDominio(ProfesionalJpaEntity entidad) {
         Set<AsignacionEspecialidad> especialidades = entidad.getEspecialidades().stream()
             .map(e -> new AsignacionEspecialidad(e.getSpecialtyId(), e.isPrimary()))

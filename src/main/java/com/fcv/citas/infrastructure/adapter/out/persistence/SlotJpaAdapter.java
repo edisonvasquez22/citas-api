@@ -65,6 +65,17 @@ public class SlotJpaAdapter implements SlotRepositoryPort {
         slotRepository.liberarSlotsDeCita(citaId);
     }
 
+    @Override
+    public List<Long> listarIdsDeCitaEnRango(Long citaId, LocalDateTime inicio, LocalDateTime fin) {
+        return slotRepository.listarIdsDeCitaEnRango(citaId, inicio, fin);
+    }
+
+    @Override
+    @Transactional
+    public void liberarSlots(List<Long> slotIds) {
+        slotRepository.liberarSlots(slotIds);
+    }
+
     private SlotProfesional aDominio(ProfessionalSlotJpaEntity entidad) {
         AvailabilityBlockJpaEntity bloque = entidad.getAvailabilityBlock();
         return new SlotProfesional(entidad.getId(), bloque.getId(), bloque.getProfessionalId(),

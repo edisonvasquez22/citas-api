@@ -33,4 +33,12 @@ public final class ProfesionalDtos {
     public record CambiarEstadoRequest(@NotNull Boolean activo) {}
 
     public record Response(Long profesionalId, Long usuarioId, String codigoProfesional, boolean activo) {}
+
+    public record EspecialidadAsignadaResponse(Long especialidadId, boolean primaria) {}
+
+    /** GET /api/admin/professionals (HU-011): listado completo, incluye inactivos. */
+    public record AdminListResponse(Long profesionalId, Long usuarioId, String nombres, String apellidos,
+                                     String tipoDocumento, String numeroDocumento, String email, String telefono,
+                                     String codigoProfesional, String matricula, boolean activo,
+                                     Set<EspecialidadAsignadaResponse> especialidades, Set<Long> sedeIds) {}
 }

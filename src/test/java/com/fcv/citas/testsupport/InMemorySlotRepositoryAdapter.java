@@ -37,4 +37,14 @@ public class InMemorySlotRepositoryAdapter implements SlotRepositoryPort {
     public void liberarSlotsDeCita(Long citaId) {
         store.liberarSlotsDeCita(citaId);
     }
+
+    @Override
+    public List<Long> listarIdsDeCitaEnRango(Long citaId, LocalDateTime inicio, LocalDateTime fin) {
+        return store.listarIdsDeCitaEnRango(citaId, inicio, fin);
+    }
+
+    @Override
+    public void liberarSlots(List<Long> slotIds) {
+        store.liberarSlots(slotIds);
+    }
 }

@@ -57,4 +57,9 @@ public class InMemoryProfesionalRepositoryAdapter implements ProfesionalReposito
     public List<Profesional> listarActivos() {
         return porId.values().stream().filter(Profesional::isActivo).toList();
     }
+
+    @Override
+    public List<Profesional> listarTodos() {
+        return List.copyOf(porId.values());
+    }
 }

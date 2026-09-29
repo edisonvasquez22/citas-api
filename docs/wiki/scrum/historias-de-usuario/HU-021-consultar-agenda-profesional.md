@@ -2,7 +2,7 @@
 id: HU-021
 tipo: historia-de-usuario
 titulo: "Consultar agenda propia del profesional"
-estado: Borrador
+estado: "En desarrollo"
 epica: "[[EP-009-agenda-profesional-y-cierre]]"
 esfuerzo: "Bajo"
 sprint_sugerido: "Sprint 3 (S4)"
@@ -53,15 +53,15 @@ RF-16. El profesional no debe poder ver datos de usuarios fuera de sus propias c
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Caso de uso `ConsultarAgendaPropia`**
+- [x] **T-01 — Caso de uso `ConsultarAgendaPropia`**
   Dificultad: Bajo
   Descripción: aplica ownership y filtro de día/semana/sede.
-- [ ] **T-02 — Endpoint REST**
+- [x] **T-02 — Endpoint REST**
   Dificultad: Bajo
-  Descripción: autorización exclusiva de PROFESSIONAL sobre su propia agenda.
-- [ ] **T-03 — Pruebas**
+  Descripción: autorización exclusiva de PROFESSIONAL sobre su propia agenda (`/api/professionals/me/**`, `hasRole("PROFESSIONAL")`).
+- [x] **T-03 — Pruebas**
   Dificultad: Bajo
-  Descripción: agenda propia con filtro, intento de acceso a agenda de otro profesional.
+  Descripción: agenda propia con filtro. El "acceso a agenda ajena" se cubre por diseño del endpoint, no por prueba de negocio — ver CA-02.
 
 ## Criterios de aceptación
 
@@ -79,21 +79,23 @@ RF-16. El profesional no debe poder ver datos de usuarios fuera de sus propias c
 
 ## Definition of Done
 
-- [ ] CA-01 y CA-02 validados con evidencia.
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 y CA-02 validados con evidencia.
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Pendiente | — | — |
-| CA-02 | Pendiente | — | — |
-| DoD-01 | Pendiente | — | — |
+| CA-01 | Cumple | `ConsultarAgendaPropiaServiceTest.listar_devuelveSoloAprobadasDelProfesionalPropio`, `.listar_filtraPorSede` | — |
+| CA-02 | Cumple | `AgendaProfesionalController` (sin `@PathVariable`, el profesional sale de `Authentication`) + `S3AuthorizationIntegrationTest.agendaProfesional_conTokenUser_devuelve403` | El endpoint no tiene forma de pedir la agenda de otro profesional (no recibe ningún id de profesional en la request) — garantía más fuerte que un chequeo de ownership post-hoc |
+| DoD-01 | Cumple | `mvn test`: 106/106, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente); sin UI en `citas-web` todavía |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
+- 2026-09-28 — Aprobada explícitamente por el usuario (alcance S4, ver `docs/wiki/scrum/README.md`).
+- 2026-09-29 — Backend implementado y validado (`GET /api/professionals/me/agenda`). Estado → `En desarrollo`.
 
 ## Notas y decisiones
 

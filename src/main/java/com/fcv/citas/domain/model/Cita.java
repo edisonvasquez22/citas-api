@@ -100,6 +100,47 @@ public final class Cita {
             inicio, fin, creadoPorUsuarioId, adminUsuarioId, ahora, motivoRechazo);
     }
 
+    /** HU-020 CA-01: al aprobar una reprogramación, la cita adopta el nuevo horario/sede sin cambiar de estado. */
+    public Cita reprogramar(Long nuevaSedeId, LocalDateTime nuevoInicio, LocalDateTime nuevoFin) {
+        requerirEstado(EstadoCita.APPROVED);
+        return new Cita(id, pacienteUsuarioId, profesionalId, nuevaSedeId, especialidadId, estado, motivo,
+            nuevoInicio, nuevoFin, creadoPorUsuarioId, aprobadoPorUsuarioId, aprobadoEn, motivoDecision);
+    }
+
+    /** HU-018 CA-01/CA-02: solo una cita futura y no terminal (APPROVED/REQUESTED) es cancelable. */
+    public Cita cancelar(LocalDateTime ahora) {
+        if (estado != EstadoCita.APPROVED && estado != EstadoCita.REQUESTED) {
+            throw new TransicionEstadoInvalidaException(
+                "Solo una cita APPROVED o REQUESTED puede cancelarse (estado actual: " + estado + ")");
+        }
+        if (!inicio.isAfter(ahora)) {
+            throw new ValidacionNegocioException("Solo se pueden cancelar citas futuras");
+        }
+        return new Cita(id, pacienteUsuarioId, profesionalId, sedeId, especialidadId, EstadoCita.CANCELLED, motivo,
+            inicio, fin, creadoPorUsuarioId, aprobadoPorUsuarioId, aprobadoEn, motivoDecision);
+    }
+
+    /** HU-022 CA-01: solo una cita APPROVED y ya pasada puede cerrarse como completada. */
+    public Cita completar(LocalDateTime ahora) {
+        requerirCerrable(ahora);
+        return new Cita(id, pacienteUsuarioId, profesionalId, sedeId, especialidadId, EstadoCita.COMPLETED, motivo,
+            inicio, fin, creadoPorUsuarioId, aprobadoPorUsuarioId, aprobadoEn, motivoDecision);
+    }
+
+    /** HU-022 CA-02: solo una cita APPROVED y ya pasada puede marcarse como no asistida. */
+    public Cita marcarNoShow(LocalDateTime ahora) {
+        requerirCerrable(ahora);
+        return new Cita(id, pacienteUsuarioId, profesionalId, sedeId, especialidadId, EstadoCita.NO_SHOW, motivo,
+            inicio, fin, creadoPorUsuarioId, aprobadoPorUsuarioId, aprobadoEn, motivoDecision);
+    }
+
+    private void requerirCerrable(LocalDateTime ahora) {
+        requerirEstado(EstadoCita.APPROVED);
+        if (fin.isAfter(ahora)) {
+            throw new ValidacionNegocioException("Solo se puede cerrar una cita cuyo horario ya haya finalizado");
+        }
+    }
+
     private void requerirEstado(EstadoCita esperado) {
         if (estado != esperado) {
             throw new TransicionEstadoInvalidaException(

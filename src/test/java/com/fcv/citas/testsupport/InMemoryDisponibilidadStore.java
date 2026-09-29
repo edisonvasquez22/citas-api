@@ -155,4 +155,21 @@ public class InMemoryDisponibilidadStore {
     public void liberarSlotsDeCita(Long citaId) {
         slots.values().forEach(s -> s.citaId.compareAndSet(citaId, null));
     }
+
+    public List<Long> listarIdsDeCitaEnRango(Long citaId, LocalDateTime inicio, LocalDateTime fin) {
+        return slots.values().stream()
+            .filter(s -> citaId.equals(s.citaId.get()))
+            .filter(s -> !s.inicio.isBefore(inicio) && s.inicio.isBefore(fin))
+            .map(s -> s.id)
+            .toList();
+    }
+
+    public void liberarSlots(List<Long> slotIds) {
+        slotIds.forEach(id -> {
+            SlotEntry entry = slots.get(id);
+            if (entry != null) {
+                entry.citaId.set(null);
+            }
+        });
+    }
 }

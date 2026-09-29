@@ -48,4 +48,15 @@ public interface ProfessionalSlotJpaRepository extends JpaRepository<Professiona
     @Modifying(clearAutomatically = true)
     @Query("UPDATE ProfessionalSlotJpaEntity s SET s.appointmentId = NULL WHERE s.appointmentId = :citaId")
     void liberarSlotsDeCita(@Param("citaId") Long citaId);
+
+    /** HU-020: distingue franja antigua vs nueva de una cita en reprogramación por su horario. */
+    @Query("SELECT s.id FROM ProfessionalSlotJpaEntity s WHERE s.appointmentId = :citaId "
+        + "AND s.startAt >= :inicio AND s.startAt < :fin")
+    List<Long> listarIdsDeCitaEnRango(@Param("citaId") Long citaId, @Param("inicio") LocalDateTime inicio,
+                                       @Param("fin") LocalDateTime fin);
+
+    /** HU-020: libera puntualmente los slots indicados. */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE ProfessionalSlotJpaEntity s SET s.appointmentId = NULL WHERE s.id IN :slotIds")
+    void liberarSlots(@Param("slotIds") List<Long> slotIds);
 }

@@ -82,6 +82,23 @@ Backend implementado y probado (`mvn test` 76/76). La UI correspondiente en `cit
 
 `HU-003` (recuperar contraseña) queda en `Borrador` para S4, tal como indica `GUIA_SESIONES_S2_S6.md`. El resto del backlog (EP-002, EP-008 a EP-011) permanece en `Borrador`/`Pendiente de aprobación` hasta S4.
 
+## Alcance aprobado para el incremento S4
+
+Aprobado explícitamente por el usuario el 2026-09-28 — el bloque "mis citas / cancelación / reprogramación / agenda del profesional / cierre de atención" que `GUIA_SESIONES_S2_S6.md` define como funcionalidad objetivo de S4. En desarrollo:
+
+13. [[HU-017-consultar-mis-citas]] — RF-13 (base de la que dependen HU-018/HU-019).
+14. [[HU-018-cancelar-cita]] — RF-14, RN-09.
+15. [[HU-019-solicitar-reprogramacion]] — RF-15, RN-01/RN-10.
+16. [[HU-020-aprobar-rechazar-reprogramacion]] — RF-15/RF-18, RN-04/RN-09/RN-10.
+17. [[HU-021-consultar-agenda-profesional]] — RF-16.
+18. [[HU-022-marcar-cierre-de-atencion]] — RF-17, RN-11/RN-12.
+
+Nota de verificación previa a la aprobación: la tarea T-02 de HU-019 mencionaba que la migración Flyway de `reschedule_requests` estaba "bloqueada hasta contar con el diseño 3FN aprobado del usuario" — esa nota queda obsoleta, las tablas `reschedule_requests`/`reschedule_request_statuses` ya existen en `V1__esquema_inicial.sql` desde la adopción del esquema de referencia (2026-09-23).
+
+Backend implementado y probado (`mvn test` 106/106) — 2026-09-29. La UI correspondiente en `citas-web` no se implementó todavía: el diseño visual sigue reservado al usuario (Stitch/AI Studio) — ver `AGENTS.md` raíz regla 11. Nuevo agregado de dominio `SolicitudReprogramacion` para HU-019/HU-020 (sin migración nueva, la tabla ya existía); ver `citas-api/AGENTS.md` y `docs/wiki/llm-wiki/wiki/contratos.md` para el detalle de endpoints y decisiones de diseño.
+
+`HU-003` (recuperar contraseña), `HU-004`/`HU-005` (perfil/afiliación, EP-002) y `HU-007`/`HU-008` (catálogo EPS/planes) quedan en `Borrador`, pendientes de una decisión de aprobación aparte — no forman parte del alcance de S4 según `GUIA_SESIONES_S2_S6.md`, aunque el backlog original las sugería en el mismo sprint.
+
 ## Decisiones/incógnitas pendientes
 
 - Ver `../llm-wiki/wiki/decisiones.md` y `../llm-wiki/wiki/riesgos.md`.

@@ -19,4 +19,7 @@ public interface ProfesionalRepositoryPort {
 
     /** HU-013: candidatos para resolver disponibilidad por especialidad/sede. */
     List<Profesional> listarActivos();
+
+    /** HU-011: el ADMIN necesita ver también los inactivos para poder reactivarlos. */
+    List<Profesional> listarTodos();
 }

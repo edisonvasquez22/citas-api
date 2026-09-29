@@ -2,7 +2,7 @@
 id: HU-017
 tipo: historia-de-usuario
 titulo: "Consultar mis citas"
-estado: Borrador
+estado: "En desarrollo"
 epica: "[[EP-008-mis-citas-cancelacion-reprogramacion]]"
 esfuerzo: "Bajo"
 sprint_sugerido: "Sprint 3 (S4)"
@@ -54,13 +54,13 @@ RF-13. Debe mostrar como mínimo sede, profesional, especialidad, fecha/hora, du
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Caso de uso `ConsultarMisCitas`**
+- [x] **T-01 — Caso de uso `ConsultarMisCitas`**
   Dificultad: Bajo
   Descripción: aplica ownership y filtros de estado/fecha.
-- [ ] **T-02 — Endpoint REST**
+- [x] **T-02 — Endpoint REST**
   Dificultad: Bajo
   Descripción: incluye motivo de rechazo cuando exista.
-- [ ] **T-03 — Pruebas**
+- [x] **T-03 — Pruebas**
   Dificultad: Bajo
   Descripción: listado propio, filtro por estado, intento de ver citas de otro usuario (debe ser imposible por diseño del endpoint).
 
@@ -74,21 +74,23 @@ RF-13. Debe mostrar como mínimo sede, profesional, especialidad, fecha/hora, du
 
 ## Definition of Done
 
-- [ ] CA-01 validado con evidencia.
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Contrato reflejado en [[HU-024-contrato-rest-citas-api]].
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 validado con evidencia.
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Contrato reflejado en [[HU-024-contrato-rest-citas-api]] (ver `docs/wiki/llm-wiki/wiki/contratos.md`).
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Pendiente | — | — |
-| DoD-01 | Pendiente | — | — |
+| CA-01 | Cumple | `ConsultarMisCitasServiceTest` (4 pruebas: propias, filtro estado, filtro fecha, motivo de rechazo) | El motivo de rechazo se resuelve desde `appointment_status_history` (HU-023), no se duplica en `appointments` |
+| DoD-01 | Cumple | `mvn test`: 106/106, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente); sin UI en `citas-web` todavía |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
+- 2026-09-28 — Aprobada explícitamente por el usuario (alcance S4, ver `docs/wiki/scrum/README.md`).
+- 2026-09-29 — Backend implementado y validado (`GET /api/appointments/mine`). Estado → `En desarrollo`.
 
 ## Notas y decisiones
 

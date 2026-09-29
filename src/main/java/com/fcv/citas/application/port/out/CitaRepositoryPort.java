@@ -17,4 +17,11 @@ public interface CitaRepositoryPort {
     /** HU-016 CA-04: bandeja filtrable de solicitudes en un estado dado (típicamente REQUESTED). */
     List<Cita> listarPorEstado(EstadoCita estado, Long sedeId, Long profesionalId, Long especialidadId,
                                 LocalDate fecha);
+
+    /** HU-017: citas propias del paciente, con filtros opcionales de estado y fecha. */
+    List<Cita> listarPorPaciente(Long pacienteUsuarioId, EstadoCita estado, LocalDate fecha);
+
+    /** HU-021: citas de un profesional en un estado dado (típicamente APPROVED), con filtros opcionales. */
+    List<Cita> listarPorProfesional(Long profesionalId, EstadoCita estado, Long sedeId, LocalDate desde,
+                                     LocalDate hasta);
 }

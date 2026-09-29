@@ -8,6 +8,7 @@ import com.fcv.citas.application.port.out.LocationRepositoryPort;
 import com.fcv.citas.application.port.out.ProfesionalRepositoryPort;
 import com.fcv.citas.application.port.out.RefreshTokenStorePort;
 import com.fcv.citas.application.port.out.SlotRepositoryPort;
+import com.fcv.citas.application.port.out.SolicitudReprogramacionRepositoryPort;
 import com.fcv.citas.application.port.out.UsuarioRepositoryPort;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -69,5 +70,10 @@ public class InMemoryPersistenceTestConfig {
     @Bean
     public HistorialEstadoCitaPort historialEstadoCitaPort() {
         return new InMemoryHistorialEstadoCitaAdapter();
+    }
+
+    @Bean
+    public SolicitudReprogramacionRepositoryPort solicitudReprogramacionRepositoryPort() {
+        return new InMemorySolicitudReprogramacionRepositoryAdapter();
     }
 }

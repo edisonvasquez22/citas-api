@@ -46,4 +46,27 @@ public class InMemoryCitaRepositoryAdapter implements CitaRepositoryPort {
             .filter(c -> fecha == null || fecha.equals(c.getInicio().toLocalDate()))
             .toList();
     }
+
+    @Override
+    public List<Cita> listarPorPaciente(Long pacienteUsuarioId, EstadoCita estado, LocalDate fecha) {
+        return porId.values().stream()
+            .filter(c -> pacienteUsuarioId.equals(c.getPacienteUsuarioId()))
+            .filter(c -> estado == null || c.getEstado() == estado)
+            .filter(c -> fecha == null || fecha.equals(c.getInicio().toLocalDate()))
+            .sorted((a, b) -> b.getInicio().compareTo(a.getInicio()))
+            .toList();
+    }
+
+    @Override
+    public List<Cita> listarPorProfesional(Long profesionalId, EstadoCita estado, Long sedeId, LocalDate desde,
+                                            LocalDate hasta) {
+        return porId.values().stream()
+            .filter(c -> profesionalId.equals(c.getProfesionalId()))
+            .filter(c -> estado == null || c.getEstado() == estado)
+            .filter(c -> sedeId == null || sedeId.equals(c.getSedeId()))
+            .filter(c -> desde == null || !c.getInicio().toLocalDate().isBefore(desde))
+            .filter(c -> hasta == null || !c.getInicio().toLocalDate().isAfter(hasta))
+            .sorted((a, b) -> a.getInicio().compareTo(b.getInicio()))
+            .toList();
+    }
 }

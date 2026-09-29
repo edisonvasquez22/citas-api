@@ -37,4 +37,14 @@ public interface SlotRepositoryPort {
 
     /** RN-09 / compensación de reserva parcial fallida: libera cualquier slot que apunte a esta cita. */
     void liberarSlotsDeCita(Long citaId);
+
+    /**
+     * HU-020: durante una reprogramación, tanto la franja antigua como la nueva quedan momentáneamente
+     * asignadas a la misma cita (RN-10). Este método permite distinguirlas por su horario para poder
+     * liberar solo una de las dos según la decisión (aprobar libera la antigua, rechazar libera la nueva).
+     */
+    List<Long> listarIdsDeCitaEnRango(Long citaId, LocalDateTime inicio, LocalDateTime fin);
+
+    /** HU-020: libera puntualmente los slots indicados (a diferencia de {@link #liberarSlotsDeCita}, que libera todos los de una cita). */
+    void liberarSlots(List<Long> slotIds);
 }

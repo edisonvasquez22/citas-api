@@ -2,7 +2,7 @@
 id: HU-018
 tipo: historia-de-usuario
 titulo: "Cancelar cita"
-estado: Borrador
+estado: "En desarrollo"
 epica: "[[EP-008-mis-citas-cancelacion-reprogramacion]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 3 (S4)"
@@ -54,16 +54,16 @@ RF-14. Una cita cancelada no se reactiva directamente y debe quedar historial de
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Caso de uso `CancelarCita`**
+- [x] **T-01 — Caso de uso `CancelarCita`**
   Dificultad: Medio
   Descripción: valida ownership, que la cita sea futura y no terminal, libera slots.
-- [ ] **T-02 — Endpoint REST**
+- [x] **T-02 — Endpoint REST**
   Dificultad: Bajo
   Descripción: autorización por ownership.
-- [ ] **T-03 — Registro de auditoría**
+- [x] **T-03 — Registro de auditoría**
   Dificultad: Bajo
   Descripción: integra con [[HU-023-historial-de-estados-de-cita]].
-- [ ] **T-04 — Pruebas**
+- [x] **T-04 — Pruebas**
   Dificultad: Medio
   Descripción: cancelación válida, cita ya terminal (`COMPLETED`/`CANCELLED`/`NO_SHOW`), cita de otro usuario, cita pasada.
 
@@ -89,23 +89,25 @@ RF-14. Una cita cancelada no se reactiva directamente y debe quedar historial de
 
 ## Definition of Done
 
-- [ ] CA-01 a CA-03 validados con evidencia.
-- [ ] Transición de estado registrada en auditoría (RF-19).
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 a CA-03 validados con evidencia.
+- [x] Transición de estado registrada en auditoría (RF-19).
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Pendiente | — | — |
-| CA-02 | Pendiente | — | — |
-| CA-03 | Pendiente | — | — |
-| DoD-01 | Pendiente | — | — |
+| CA-01 | Cumple | `CancelarCitaServiceTest.cancelar_citaPropiaFuturaYNoTerminal_pasaACancelled` | — |
+| CA-02 | Cumple | `CancelarCitaServiceTest.cancelar_citaYaCancelada_seRechaza` | — |
+| CA-03 | Cumple | `CancelarCitaServiceTest.cancelar_citaDeOtroUsuario_seRechazaComoNoEncontrada` | 404 en vez de 403, mismo patrón que `GestionarBloquesDisponibilidadService` (no revela existencia del recurso) |
+| DoD-01 | Cumple | `mvn test`: 106/106, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente); sin UI en `citas-web` todavía |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
+- 2026-09-28 — Aprobada explícitamente por el usuario (alcance S4, ver `docs/wiki/scrum/README.md`).
+- 2026-09-29 — Backend implementado y validado (`POST /api/appointments/{id}/cancel`). Estado → `En desarrollo`.
 
 ## Notas y decisiones
 

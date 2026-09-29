@@ -1,11 +1,11 @@
 ---
 tipo: wiki
-actualizado: 2026-09-25
+actualizado: 2026-09-29
 ---
 
 # Contratos REST — `citas-api` ↔ `citas-web`
 
-Se actualiza junto con cada HU que agrega/cambia un endpoint (HU-024). Estado tras el incremento S3.
+Se actualiza junto con cada HU que agrega/cambia un endpoint (HU-024). Estado tras el incremento S4 (backend).
 
 ## Convenciones fijadas
 
@@ -37,6 +37,7 @@ Se actualiza junto con cada HU que agrega/cambia un endpoint (HU-024). Estado tr
 | POST | `/api/admin/specialties` | `CrearRequest` (codigo, nombre, duracionMinutos, general, requiereAprobacionAdmin) | `201` `Response` | `400` duración≠30/60 o código duplicado | ADMIN |
 | PUT | `/api/admin/specialties/{id}` | `EditarRequest` | `200` `Response` | `400`/`404` | ADMIN |
 | PATCH | `/api/admin/specialties/{id}/status` | `{activa}` | `200` `Response` | `404` | ADMIN |
+| GET | `/api/admin/professionals` | — | `200` lista `AdminListResponse` (incluye inactivos, datos de contacto reales) | — | ADMIN — **agregado 2026-09-28**, no existía forma de listar profesionales inactivos para HU-011 |
 | POST | `/api/admin/professionals` | `RegistrarRequest` (datos de cuenta + codigoProfesional, matricula, especialidades[], sedeIds[]) | `201` `Response` (profesionalId, usuarioId, activo) | `409` email/documento/código/matrícula duplicados; `400` especialidad inactiva/sede inexistente/primaria duplicada | ADMIN |
 | PATCH | `/api/admin/professionals/{id}/status` | `{activo}` | `200` `Response` | `404` | ADMIN |
 | GET | `/api/professionals/me/availability-blocks` | — | `200` lista `BloqueDisponibilidadDtos.Response` | — | PROFESSIONAL |
@@ -53,14 +54,30 @@ Se actualiza junto con cada HU que agrega/cambia un endpoint (HU-024). Estado tr
 Notas de diseño relevantes para quien consuma esto desde `citas-web`:
 
 - La reserva de horario (general/especializada) es **atómica**: si el horario se lo llevó otro justo antes de confirmar, la API responde `409` (`HorarioNoDisponibleException`), no un error genérico — el frontend debe interpretar `409` en estos dos endpoints como "vuelve a consultar disponibilidad".
-- El motivo de rechazo de una cita especializada (HU-016) **no se re-consulta después** por un endpoint propio en S3 (no hay HU-017 "mis citas" todavía): solo viaja en la respuesta inmediata de `POST .../reject`. Queda auditado permanentemente en `appointment_status_history` (HU-023), pero su lectura expuesta por API es trabajo de una HU futura.
+- El motivo de rechazo de una cita especializada (HU-016) no vive en `appointments`: se resuelve en `GET /api/appointments/mine` (HU-017) consultando `appointment_status_history` por detrás — el frontend no necesita reconstruirlo, ya viene en `motivoDecision`.
+
+## Endpoints implementados (HU-017 a HU-022 — S4, backend)
+
+| Método | Path | Body | Respuesta | Errores | Autorización |
+|---|---|---|---|---|---|
+| GET | `/api/appointments/mine?estado=&fecha=` | — | `200` lista `MiCitaResponse` (sedeId, profesionalId, especialidadId, estado, inicio, fin, motivoDecision) | — | autenticado; ownership estricto (solo las propias) |
+| POST | `/api/appointments/{id}/cancel` | — | `200` `CierreResponse` (citaId, estado=CANCELLED) | `409` cita ya terminal; `400` cita pasada; `404` no es propia | autenticado |
+| POST | `/api/appointments/{id}/reschedule` | `ReprogramarRequest` (sedeId, fecha, horaInicio) | `200` `ReprogramarResponse` (solicitudId, citaId, estado=PENDING, inicioSolicitado, finSolicitado) | `400` cita no APPROVED/no futura/sede no habilitada; `409` nuevo horario no disponible; `404` no es propia | autenticado |
+| GET | `/api/admin/reschedules` | — | `200` lista `Resumen` (solicitudes PENDING) | — | ADMIN |
+| POST | `/api/admin/reschedules/{id}/approve` | — | `200` `Resumen` (estado=APPROVED) | `409` no estaba PENDING; `404` | ADMIN |
+| POST | `/api/admin/reschedules/{id}/reject` | `{motivo}` | `200` `Resumen` (estado=REJECTED, motivoDecision) | `400` sin motivo; `409` no estaba PENDING; `404` | ADMIN |
+| GET | `/api/professionals/me/agenda?sedeId=&desde=&hasta=` | — | `200` lista `CitaAgendaResponse` (citaId, pacienteUsuarioId, sedeId, especialidadId, inicio, fin) — solo `APPROVED` propias | — | PROFESSIONAL |
+| POST | `/api/appointments/{id}/complete` | — | `200` `CierreResponse` (estado=COMPLETED) | `400` no APPROVED/no pasada; `404` no es del profesional | autenticado (ownership por profesional) |
+| POST | `/api/appointments/{id}/no-show` | — | `200` `CierreResponse` (estado=NO_SHOW) | `400`/`404` (igual que complete) | autenticado (ownership por profesional) |
+
+Notas de diseño de HU-019/HU-020 (reprogramación): durante el `PENDING`, la franja antigua y la nueva quedan **ambas** asignadas al mismo `citaId` en `professional_slots` (RN-10: la cita original no se toca hasta la decisión). `GestionarReprogramacionesService` las distingue por horario (`SlotRepositoryPort.listarIdsDeCitaEnRango`) para liberar solo la que corresponda según la decisión — el frontend no necesita saber esto, solo interpretar los estados `PENDING`/`APPROVED`/`REJECTED` de la solicitud.
 
 Fuente de verdad detallada: `citas-api/src/main/java/com/fcv/citas/infrastructure/adapter/in/web/`. Swagger UI (springdoc 2.8.17) disponible en `/swagger-ui.html` una vez el backend esté corriendo.
 
 ## Pendiente
 
-- El resto de los endpoints del backlog (EP-002, EP-008 a EP-011), a medida que se implementen en S4.
-- Exponer lectura del historial de auditoría (HU-023) desde HU-017/HU-021 cuando existan.
+- El resto de los endpoints del backlog (EP-002, EP-008 a EP-011: perfil/afiliación, catálogo EPS/planes, recuperar contraseña) — fuera del alcance de S4 según `GUIA_SESIONES_S2_S6.md`, quedan para una aprobación aparte.
+- UI en `citas-web` para HU-017 a HU-022 (backend implementado, frontend pendiente — mismo patrón que S3: diseño visual reservado al usuario vía Stitch/AI Studio).
 - Publicar el JSON/YAML de OpenAPI exportado como artefacto versionado (opcional; hoy se sirve dinámico vía springdoc).
 
 ## Relacionado

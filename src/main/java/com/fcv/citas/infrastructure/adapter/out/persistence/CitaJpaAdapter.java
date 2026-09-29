@@ -52,6 +52,25 @@ public class CitaJpaAdapter implements CitaRepositoryPort {
             .stream().map(this::aDominio).toList();
     }
 
+    @Override
+    public List<Cita> listarPorPaciente(Long pacienteUsuarioId, EstadoCita estado, LocalDate fecha) {
+        String statusCode = estado == null ? null : estado.name();
+        LocalDateTime desde = fecha == null ? null : fecha.atStartOfDay();
+        LocalDateTime hasta = fecha == null ? null : fecha.plusDays(1).atStartOfDay();
+        return citaJpaRepository.listarPorPaciente(pacienteUsuarioId, statusCode, desde, hasta).stream()
+            .map(this::aDominio).toList();
+    }
+
+    @Override
+    public List<Cita> listarPorProfesional(Long profesionalId, EstadoCita estado, Long sedeId, LocalDate desde,
+                                            LocalDate hasta) {
+        String statusCode = estado == null ? null : estado.name();
+        LocalDateTime desdeDt = desde == null ? null : desde.atStartOfDay();
+        LocalDateTime hastaDt = hasta == null ? null : hasta.plusDays(1).atStartOfDay();
+        return citaJpaRepository.listarPorProfesional(profesionalId, statusCode, sedeId, desdeDt, hastaDt).stream()
+            .map(this::aDominio).toList();
+    }
+
     private Cita aDominio(CitaJpaEntity entidad) {
         return Cita.reconstruir(entidad.getId(), entidad.getPatientUserId(), entidad.getProfessionalId(),
             entidad.getLocationId(), entidad.getSpecialtyId(), EstadoCita.valueOf(entidad.getStatus().getCode()),

@@ -62,6 +62,20 @@ class S3AuthorizationIntegrationTest {
     }
 
     @Test
+    void adminProfessionals_conTokenUser_devuelve403() throws Exception {
+        mockMvc.perform(get("/api/admin/professionals")
+                .header("Authorization", "Bearer " + tokenPara(RolNombre.USER, "5")))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminProfessionals_conTokenAdmin_devuelve200() throws Exception {
+        mockMvc.perform(get("/api/admin/professionals")
+                .header("Authorization", "Bearer " + tokenPara(RolNombre.ADMIN, "6")))
+            .andExpect(status().isOk());
+    }
+
+    @Test
     void availabilityBlocks_conTokenUser_devuelve403() throws Exception {
         mockMvc.perform(get("/api/professionals/me/availability-blocks")
                 .header("Authorization", "Bearer " + tokenPara(RolNombre.USER, "3")))
@@ -83,5 +97,26 @@ class S3AuthorizationIntegrationTest {
     void appointments_requiereAutenticacion() throws Exception {
         mockMvc.perform(get("/api/availability?especialidadId=1&fecha=2027-01-01"))
             .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void adminReschedules_conTokenUser_devuelve403() throws Exception {
+        mockMvc.perform(get("/api/admin/reschedules")
+                .header("Authorization", "Bearer " + tokenPara(RolNombre.USER, "7")))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminReschedules_conTokenAdmin_devuelve200() throws Exception {
+        mockMvc.perform(get("/api/admin/reschedules")
+                .header("Authorization", "Bearer " + tokenPara(RolNombre.ADMIN, "8")))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void agendaProfesional_conTokenUser_devuelve403() throws Exception {
+        mockMvc.perform(get("/api/professionals/me/agenda")
+                .header("Authorization", "Bearer " + tokenPara(RolNombre.USER, "9")))
+            .andExpect(status().isForbidden());
     }
 }
