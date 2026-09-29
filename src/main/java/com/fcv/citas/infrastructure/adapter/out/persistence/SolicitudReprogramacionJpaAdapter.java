@@ -48,6 +48,11 @@ public class SolicitudReprogramacionJpaAdapter implements SolicitudReprogramacio
         return repository.listarPorEstado(estado.name()).stream().map(this::aDominio).toList();
     }
 
+    @Override
+    public Optional<SolicitudReprogramacion> buscarUltimaPorCita(Long citaId) {
+        return repository.findFirstByAppointmentIdOrderByIdDesc(citaId).map(this::aDominio);
+    }
+
     private SolicitudReprogramacion aDominio(RescheduleRequestJpaEntity entidad) {
         return SolicitudReprogramacion.reconstruir(entidad.getId(), entidad.getAppointmentId(),
             entidad.getRequestedByUserId(), entidad.getRequestedLocationId(),

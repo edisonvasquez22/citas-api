@@ -14,4 +14,12 @@ public interface SolicitudReprogramacionRepositoryPort {
 
     /** HU-020: bandeja de solicitudes en un estado dado (típicamente PENDING). */
     List<SolicitudReprogramacion> listarPorEstado(EstadoSolicitudReprogramacion estado);
+
+    /**
+     * HU-017: la solicitud de reprogramación más reciente de una cita (cualquiera sea su estado), para que el
+     * propio paciente pueda ver el resultado de su solicitud en `GET /api/appointments/mine` — el estado de la
+     * cita misma no cambia mientras la reprogramación está PENDING (RN-10), así que sin esto el paciente no
+     * tenía forma de conocer el desenlace de su solicitud una vez decidida.
+     */
+    Optional<SolicitudReprogramacion> buscarUltimaPorCita(Long citaId);
 }

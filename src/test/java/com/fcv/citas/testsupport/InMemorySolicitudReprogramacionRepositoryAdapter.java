@@ -39,4 +39,10 @@ public class InMemorySolicitudReprogramacionRepositoryAdapter implements Solicit
     public List<SolicitudReprogramacion> listarPorEstado(EstadoSolicitudReprogramacion estado) {
         return porId.values().stream().filter(s -> s.getEstado() == estado).toList();
     }
+
+    @Override
+    public Optional<SolicitudReprogramacion> buscarUltimaPorCita(Long citaId) {
+        return porId.values().stream().filter(s -> s.getCitaId().equals(citaId))
+            .max(java.util.Comparator.comparing(SolicitudReprogramacion::getId));
+    }
 }

@@ -106,6 +106,20 @@ RF-11. Es el primer flujo de creación de citas real del backlog; valida el circ
 
 - 2026-09-17 — HU creada en estado `Borrador`.
 - 2026-09-25 — Aprobada explícitamente por el usuario como parte del alcance de S3; implementada y validada, incluida la prueba de doble reserva bajo concurrencia real que pide `GUIA_SESIONES_S2_S6.md`. Estado → `En desarrollo`.
+- 2026-09-29 — Ejecución formal de `LOOP_01_GUIADO_SIMPLE.md` (S4): ver sección siguiente.
+
+### Ejecución formal de LOOP_01 (2026-09-29)
+
+Ejecutado como Builder/Verifier con roles separados: un subagente Verifier aislado (sin capacidad de modificar código) auditó de forma independiente, sin fiarse del historial documentado aquí, si la garantía de atomicidad de CA-03 seguía intacta después de todo el trabajo de S4 (mis citas, cancelación, reprogramación, agenda, cierre) agregado encima.
+
+**VEREDICTO: PASS en la iteración 1** (no hizo falta Builder — el defecto original ya estaba corregido desde el 2026-09-25 y la corrección sigue intacta).
+
+Evidencia entregada por el Verifier:
+- `ProfessionalSlotJpaRepository.reservarAtomicamente` (líneas 42-45): una única sentencia `UPDATE ... WHERE ... AND appointmentId IS NULL` vía `@Modifying @Query`, sin `SELECT` previo — confirmado por lectura directa del archivo, no por el historial.
+- `InMemoryDisponibilidadStore.reservarAtomicamente` (líneas 144-153): usa `AtomicReference<Long>.compareAndSet(null, citaId)` por slot — CAS real, no check-then-set separable.
+- `mvn test` completo (no acotado): **106/106, 0 failures, 0 errors** — incluidas `SolicitarCitaGeneralServiceTest.solicitar_bajoConcurrencia_soloUnaSolicitudGanaElHorario` (10 hilos, exactamente 1 éxito) y su equivalente especializada, ambas verdes.
+
+Log completo de la iteración (transcript del subagente) disponible en el historial de esta sesión de Claude Code; no se modificó ningún archivo durante la verificación.
 
 ## Notas y decisiones
 

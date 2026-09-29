@@ -27,7 +27,12 @@ public final class AppointmentDtos {
 
     public record Response(Long citaId, String estado, LocalDateTime inicio, LocalDateTime fin) {}
 
-    /** HU-017: GET /api/appointments/mine. */
+    /** HU-017: GET /api/appointments/mine. reprogramacion es la última solicitud conocida para esta cita, o null. */
     public record MiCitaResponse(Long citaId, Long sedeId, Long profesionalId, Long especialidadId, String estado,
-                                  LocalDateTime inicio, LocalDateTime fin, String motivoDecision) {}
+                                  LocalDateTime inicio, LocalDateTime fin, String motivoDecision,
+                                  ReprogramacionInfo reprogramacion) {}
+
+    /** HU-019/HU-020: desenlace de la última solicitud de reprogramación de una cita. */
+    public record ReprogramacionInfo(Long solicitudId, String estado, LocalDateTime inicioSolicitado,
+                                      LocalDateTime finSolicitado, String motivoDecision) {}
 }

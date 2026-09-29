@@ -60,7 +60,7 @@ Notas de diseño relevantes para quien consuma esto desde `citas-web`:
 
 | Método | Path | Body | Respuesta | Errores | Autorización |
 |---|---|---|---|---|---|
-| GET | `/api/appointments/mine?estado=&fecha=` | — | `200` lista `MiCitaResponse` (sedeId, profesionalId, especialidadId, estado, inicio, fin, motivoDecision) | — | autenticado; ownership estricto (solo las propias) |
+| GET | `/api/appointments/mine?estado=&fecha=` | — | `200` lista `MiCitaResponse` (sedeId, profesionalId, especialidadId, estado, inicio, fin, motivoDecision, reprogramacion) | — | autenticado; ownership estricto (solo las propias) |
 | POST | `/api/appointments/{id}/cancel` | — | `200` `CierreResponse` (citaId, estado=CANCELLED) | `409` cita ya terminal; `400` cita pasada; `404` no es propia | autenticado |
 | POST | `/api/appointments/{id}/reschedule` | `ReprogramarRequest` (sedeId, fecha, horaInicio) | `200` `ReprogramarResponse` (solicitudId, citaId, estado=PENDING, inicioSolicitado, finSolicitado) | `400` cita no APPROVED/no futura/sede no habilitada; `409` nuevo horario no disponible; `404` no es propia | autenticado |
 | GET | `/api/admin/reschedules` | — | `200` lista `Resumen` (solicitudes PENDING) | — | ADMIN |
@@ -71,6 +71,8 @@ Notas de diseño relevantes para quien consuma esto desde `citas-web`:
 | POST | `/api/appointments/{id}/no-show` | — | `200` `CierreResponse` (estado=NO_SHOW) | `400`/`404` (igual que complete) | autenticado (ownership por profesional) |
 
 Notas de diseño de HU-019/HU-020 (reprogramación): durante el `PENDING`, la franja antigua y la nueva quedan **ambas** asignadas al mismo `citaId` en `professional_slots` (RN-10: la cita original no se toca hasta la decisión). `GestionarReprogramacionesService` las distingue por horario (`SlotRepositoryPort.listarIdsDeCitaEnRango`) para liberar solo la que corresponda según la decisión — el frontend no necesita saber esto, solo interpretar los estados `PENDING`/`APPROVED`/`REJECTED` de la solicitud.
+
+`MiCitaResponse.reprogramacion` (agregado 2026-09-29 tras `LOOP_02_GUIADO_AVANZADO.md`, ver `HU-019-solicitar-reprogramacion.md`) trae la **última** solicitud de reprogramación conocida para esa cita (cualquiera sea su estado), o `null` si nunca se pidió una: `{ solicitudId, estado, inicioSolicitado, finSolicitado, motivoDecision }`. Es la única forma en que el USER conoce el desenlace de su propia solicitud — el `estado` de la cita misma no cambia mientras la reprogramación está `PENDING` (RN-10), así que sin este campo el paciente no tenía manera de ver que su solicitud fue aprobada o rechazada (ni el motivo) una vez decidida.
 
 Fuente de verdad detallada: `citas-api/src/main/java/com/fcv/citas/infrastructure/adapter/in/web/`. Swagger UI (springdoc 2.8.17) disponible en `/swagger-ui.html` una vez el backend esté corriendo.
 

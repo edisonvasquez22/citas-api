@@ -83,15 +83,17 @@ RF-13. Debe mostrar como mínimo sede, profesional, especialidad, fecha/hora, du
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Cumple | `ConsultarMisCitasServiceTest` (4 pruebas: propias, filtro estado, filtro fecha, motivo de rechazo) | El motivo de rechazo se resuelve desde `appointment_status_history` (HU-023), no se duplica en `appointments` |
-| DoD-01 | Cumple | `mvn test`: 106/106, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente); sin UI en `citas-web` todavía |
+| CA-01 | Cumple | `ConsultarMisCitasServiceTest` (7 pruebas: propias, filtro estado, filtro fecha, motivo de rechazo, sin/con/rechazada solicitud de reprogramación) | El motivo de rechazo se resuelve desde `appointment_status_history` (HU-023), no se duplica en `appointments` |
+| DoD-01 | Cumple | `mvn test`: 109/109, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente) |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
 - 2026-09-28 — Aprobada explícitamente por el usuario (alcance S4, ver `docs/wiki/scrum/README.md`).
 - 2026-09-29 — Backend implementado y validado (`GET /api/appointments/mine`). Estado → `En desarrollo`.
+- 2026-09-29 — UI (`MisCitasScreen.tsx`) integrada y verificada con Playwright (ver `citas-web/AGENTS.md`).
+- 2026-09-29 — Ejecución de `LOOP_02_GUIADO_AVANZADO.md` (detalle completo en [[HU-019-solicitar-reprogramacion]]) agregó el campo `reprogramacion` a `MiCitaResponse`: sin este cambio, el paciente no tenía forma persistente de ver el desenlace de su propia solicitud de reprogramación.
 
 ## Notas y decisiones
 
-- Ninguna.
+- Ver [[HU-019-solicitar-reprogramacion]] para el detalle de por qué `MiCitaResponse` incluye ahora el campo `reprogramacion`.

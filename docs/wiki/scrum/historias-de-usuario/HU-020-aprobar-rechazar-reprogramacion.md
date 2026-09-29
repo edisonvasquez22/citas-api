@@ -106,14 +106,16 @@ RF-15 (decisión) + RF-18 (aparece en la bandeja administrativa junto a las cita
 | CA-03 | Cumple | `GestionarReprogramacionesServiceTest.rechazar_sinMotivo_seRechaza` | — |
 | DoD-02 | Cumple | `SolicitudReprogramacion.aprobar()`/`rechazar()` (columnas `decided_by_user_id`/`decided_at`/`decision_reason`) | Mismo razonamiento que HU-019 DoD-02: no hay entrada en `appointment_status_history` porque el `EstadoCita` de la cita no cambia en este flujo (RN-10) |
 | DoD-03 | No verificable | — | No se escribió una prueba de concurrencia (10 hilos, patrón de HU-014/015 RN-01) para doble-aprobación simultánea de la misma solicitud. Riesgo acotado: aunque ocurriera, la atomicidad real de los slots (RN-01, ya probada) sigue protegiendo contra doble-reserva del horario; el peor caso es una ambigüedad de "quién decidió" en `reschedule_requests`, no una inconsistencia de agenda. Pendiente si se quiere cerrar formalmente. |
-| DoD-01 | Cumple | `mvn test`: 106/106, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente); sin UI en `citas-web` todavía |
+| DoD-01 | Cumple | `mvn test`: 109/109, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente) |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
 - 2026-09-28 — Aprobada explícitamente por el usuario (alcance S4, ver `docs/wiki/scrum/README.md`).
 - 2026-09-29 — Backend implementado y validado (`GET/POST /api/admin/reschedules/**`). Estado → `En desarrollo`. Queda pendiente (no bloqueante) la prueba de concurrencia de DoD-03 si se quiere elevar el rigor al nivel de RN-01.
+- 2026-09-29 — UI integrada (`BandejaReprogramacionesScreen.tsx`/`RechazarReprogramacionModal.tsx`) y verificada con Playwright.
+- 2026-09-29 — Ejecución de `LOOP_02_GUIADO_AVANZADO.md` (detalle completo en [[HU-019-solicitar-reprogramacion]]): confirmó que "solo ADMIN decide" se cumple, y corrigió que el paciente no podía ver el estado/motivo de la decisión del ADMIN — la afirmación de `RechazarReprogramacionModal.tsx` ("el motivo queda visible para el paciente") era falsa hasta esta corrección.
 
 ## Notas y decisiones
 
-- Ninguna.
+- Ver [[HU-019-solicitar-reprogramacion]] para el detalle de la ejecución de LOOP_02.

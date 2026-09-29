@@ -86,7 +86,11 @@ public class AppointmentsController {
                                                             @RequestParam(required = false) LocalDate fecha) {
         return consultarMisCitasUseCase.listar(Long.valueOf(authentication.getName()), estado, fecha).stream()
             .map(r -> new AppointmentDtos.MiCitaResponse(r.citaId(), r.sedeId(), r.profesionalId(),
-                r.especialidadId(), r.estado(), r.inicio(), r.fin(), r.motivoDecision()))
+                r.especialidadId(), r.estado(), r.inicio(), r.fin(), r.motivoDecision(),
+                r.reprogramacion() == null ? null : new AppointmentDtos.ReprogramacionInfo(
+                    r.reprogramacion().solicitudId(), r.reprogramacion().estado(),
+                    r.reprogramacion().inicioSolicitado(), r.reprogramacion().finSolicitado(),
+                    r.reprogramacion().motivoDecision())))
             .toList();
     }
 
