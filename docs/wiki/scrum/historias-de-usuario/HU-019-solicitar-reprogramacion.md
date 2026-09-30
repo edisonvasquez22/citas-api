@@ -41,6 +41,7 @@ RF-15. Solo una cita `APPROVED` y futura puede solicitar reprogramación; conser
 - Solo cita `APPROVED` y futura es reprogramable.
 - Conserva profesional y especialidad.
 - La nueva franja se retiene mientras la solicitud está `PENDING` (RN-01); la cita original no se toca hasta la decisión (RN-10).
+- Una cita no puede tener dos solicitudes de reprogramación `PENDING` a la vez (regla agregada 2026-09-29, ver LOOP_03 más abajo).
 
 ## Dependencias y relaciones
 
@@ -86,9 +87,15 @@ RF-15. Solo una cita `APPROVED` y futura puede solicitar reprogramación; conser
 **Cuando** el usuario lo solicita como reprogramación
 **Entonces** el sistema rechaza la solicitud sin afectar la cita original.
 
+### CA-04 — Sin dos solicitudes PENDING a la vez (agregada 2026-09-29, LOOP_03)
+
+**Dado** una cita con una solicitud de reprogramación ya en estado `PENDING`
+**Cuando** el usuario (o dos solicitudes concurrentes) intenta crear otra solicitud para la misma cita
+**Entonces** el sistema rechaza la nueva solicitud (`409`), incluso bajo concurrencia real, y solo queda una `PENDING`.
+
 ## Definition of Done
 
-- [x] CA-01 a CA-03 validados con evidencia.
+- [x] CA-01 a CA-04 validados con evidencia.
 - [x] Entidad/adaptador JPA coherente con `reschedule_requests`/`reschedule_request_statuses` (ya existentes en `V1__esquema_inicial.sql`).
 - [x] Transición registrada (ver observación DoD-02 sobre el mecanismo exacto).
 - [x] `mvn test` pasa para los módulos afectados.
@@ -101,8 +108,9 @@ RF-15. Solo una cita `APPROVED` y futura puede solicitar reprogramación; conser
 | CA-01 | Cumple | `SolicitarReprogramacionServiceTest.solicitar_horarioDisponible_quedaPendingSinTocarLaCitaOriginal` | — |
 | CA-02 | Cumple | `SolicitarReprogramacionServiceTest.solicitar_citaNoAprobada_seRechaza` | — |
 | CA-03 | Cumple | `SolicitarReprogramacionServiceTest.solicitar_nuevoHorarioNoDisponible_seRechazaSinAfectarLaCitaOriginal` | — |
+| CA-04 | Cumple | `SolicitarReprogramacionServiceTest.solicitar_conSolicitudPendienteExistente_seRechaza` + `.solicitar_dosSolicitudesConcurrentesSobreLaMismaCita_soloUnaQuedaPending` (8 hilos reales, cada uno con horario nuevo distinto para aislar la regla de RN-01) | Demostrado explícitamente en Red→Green (guarda comentada → 2 pruebas fallan con `expected 1 but was 8` → restaurada → 111/111) — ver LOOP_03 más abajo |
 | DoD-02 | Cumple | `SolicitudReprogramacion.solicitar()` (estado `PENDING` al crear) | La transición vive en el propio `reschedule_requests.status_id` (y luego `decided_by_user_id`/`decided_at`/`decision_reason` al decidir, ver HU-020), no en `appointment_status_history`: el `EstadoCita` de la cita no cambia mientras la solicitud está pendiente (RN-10), así que no aplica un registro ahí |
-| DoD-01 | Cumple | `mvn test`: 109/109, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente) |
+| DoD-01 | Cumple | `mvn test`: 111/111, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente) |
 
 ## Historial de validación
 
@@ -124,10 +132,33 @@ Ejecutado como Builder/Verifier con roles separados, sobre las 6 reglas innegoci
 
 **Iteración 2 — VEREDICTO: PASS** (un segundo subagente Verifier, sin contexto de la implementación salvo lo documentado, releyó todo el código y las pruebas desde cero). Confirmó con evidencia de archivo:línea que el criterio 6 ahora se cumple de forma persistente (dato viene siempre del backend, no de estado efímero de React), que las reglas 1-5 no se rompieron, y `mvn test`: **109/109** (antes 106, +3 nuevas), `npm run build`/`npm run lint`: EXIT 0. Verificado además con Playwright por este agente (no el Verifier): el banner de rechazo con motivo sobrevive a un recargo completo de página.
 
-**Hallazgos residuales no bloqueantes** (reportados por el Verifier, fuera del alcance del criterio 6): (1) sin prueba explícita para el caso de dos solicitudes de reprogramación *distintas* sobre la misma cita — la lógica de "última por id" se revisó manualmente y es correcta, pero falta el test; (2) no hay guarda de backend contra una segunda solicitud PENDING concurrente para la misma cita (solo se oculta el botón en la UI) — candidato a HU futura, no introducido por esta iteración.
+**Hallazgos residuales no bloqueantes** (reportados por el Verifier, fuera del alcance del criterio 6): (1) sin prueba explícita para el caso de dos solicitudes de reprogramación *distintas* sobre la misma cita — la lógica de "última por id" se revisó manualmente y es correcta, pero falta el test; (2) no hay guarda de backend contra una segunda solicitud PENDING concurrente para la misma cita (solo se oculta el botón en la UI) — candidato a HU futura, no introducido por esta iteración. **Resuelto por LOOP_03, ver sección siguiente.**
 
 Log completo de ambas iteraciones (transcripts de los subagentes) disponible en el historial de esta sesión de Claude Code.
+
+### Ejecución formal de LOOP_03 (2026-09-29) — reto independiente
+
+A diferencia de LOOP_01/LOOP_02 (que vienen de archivos `.md` fijos en `prompts/goal-loop/`), este loop lo diseñó el agente orquestador siguiendo el formato exacto de `LOOP_03_RETO_INDEPENDIENTE.md` (10 puntos: disparador, meta verificable, estado observado, alcance del Builder, evidencia del Verifier, presupuesto, condición de parada, condición de escalamiento, log, justificación), presentado y aprobado explícitamente por el usuario antes de ejecutar — la guía exige que el reto lo identifique/diseñe el estudiante, no un agente por su cuenta; aquí el estudiante delegó el diseño explícitamente y lo revisó antes de dar luz verde.
+
+**Disparador**: el hallazgo residual de LOOP_02 (arriba) — `SolicitarReprogramacionService.solicitar()` no validaba si ya existía una solicitud `PENDING` para la misma cita antes de crear otra.
+
+**Meta verificable**: con una `PENDING` ya existente, un segundo intento sobre la misma cita se rechaza (sin crear una segunda fila), incluso bajo concurrencia real. Presupuesto: máximo 3 iteraciones.
+
+**Implementación (Builder, sin migración nueva, sin tocar frontend/RN-01/flujo de aprobar-rechazar)**:
+- `CitaRepositoryPort.conBloqueoDeEscritura(citaId, accion)`: serializa una operación sobre una cita entre hilos/transacciones concurrentes. JPA (`CitaJpaAdapter`): `@Lock(LockModeType.PESSIMISTIC_WRITE)` sobre una query dedicada (`SELECT ... FOR UPDATE`, vigente hasta el commit de la transacción del llamador). En memoria (`InMemoryCitaRepositoryAdapter`): `ReentrantLock` real por `citaId`.
+- `SolicitudReprogramacionRepositoryPort.existePendientePorCita(citaId)`.
+- `SolicitarReprogramacionService.solicitar()`: el check-pendiente + búsqueda de slots + reserva atómica + creación de la solicitud quedan dentro del bloqueo; si ya hay una `PENDING`, lanza `TransicionEstadoInvalidaException` (409, reutiliza el mapeo HTTP ya existente).
+- 2 pruebas nuevas (CA-04 arriba), incluida una de concurrencia real con 8 hilos que piden horarios *distintos* entre sí (aísla la regla nueva de RN-01, que protege slots, no PENDING duplicadas).
+
+**Demostración Red→Green** (por el propio Builder, antes de pedir verificación): guarda comentada → `mvn test` de la clase → 2 pruebas nuevas fallan (`expected: 1 but was: 8` en la de concurrencia) → guarda restaurada → 111/111 de nuevo.
+
+**VEREDICTO: PASS en la iteración 1** (subagente Verifier aislado, sin contexto previo de la implementación salvo lo documentado). Confirmó independientemente: el lock JPA cubre toda la operación (no solo el SELECT) porque `conBloqueoDeEscritura` es `@Transactional` con propagación REQUIRED y se une a la transacción del servicio; el `ReentrantLock` en memoria no tiene condición de carrera en su creación (`computeIfAbsent` de `ConcurrentHashMap`); las pruebas nuevas realmente aíslan la regla de RN-01; el alcance se respetó (`git diff --stat`: 10 archivos, ninguno fuera de lo acordado); `mvn test` 111/111 de forma independiente.
+
+**Hallazgos residuales del Verifier (no bloqueantes)**: (1) orden de bloqueo asimétrico entre `solicitar()` (bloquea `appointments` primero, luego `slots`) y `aprobar()`/`rechazar()` (tocan `slots` primero, `appointments` al final vía `guardar()` normal, sin `FOR UPDATE` explícito) — no debería producir un deadlock real hoy dado RN-10, pero es un orden de bloqueo latente e indocumentado, sin prueba que lo ejercite; (2) el lock por cita serializa también intentos concurrentes con horarios *no conflictivos* entre sí sobre la misma cita — tradeoff de rendimiento aceptado a propósito; (3) el mapa de locks del doble en memoria (`InMemoryCitaRepositoryAdapter`, solo test) nunca se purga — riesgo bajo, no es código de producción.
+
+Log completo (transcript del Verifier) disponible en el historial de esta sesión de Claude Code.
 
 ## Notas y decisiones
 
 - Ejecutado como LOOP_02 de S4 (ver sección de arriba) — el candidato original que sugería esta nota para el GOAL cross-repo de S3 quedó superado por la ejecución real del loop de S4.
+- LOOP_03 (arriba) cierra el hallazgo residual que dejó LOOP_02 sobre solicitudes PENDING duplicadas.

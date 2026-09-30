@@ -45,4 +45,10 @@ public class InMemorySolicitudReprogramacionRepositoryAdapter implements Solicit
         return porId.values().stream().filter(s -> s.getCitaId().equals(citaId))
             .max(java.util.Comparator.comparing(SolicitudReprogramacion::getId));
     }
+
+    @Override
+    public boolean existePendientePorCita(Long citaId) {
+        return porId.values().stream()
+            .anyMatch(s -> s.getCitaId().equals(citaId) && s.getEstado() == EstadoSolicitudReprogramacion.PENDING);
+    }
 }

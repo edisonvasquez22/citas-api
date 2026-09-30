@@ -9,12 +9,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 /** Doble de prueba de {@link CitaRepositoryPort} (HU-014/HU-015/HU-016), sin MySQL. */
 public class InMemoryCitaRepositoryAdapter implements CitaRepositoryPort {
 
     private final AtomicLong secuenciaId = new AtomicLong(0);
     private final Map<Long, Cita> porId = new ConcurrentHashMap<>();
+    // HU-019 (LOOP_03): un ReentrantLock real por citaId — equivalente en memoria al SELECT ... FOR UPDATE
+    // de CitaJpaAdapter, para que las pruebas de concurrencia ejerciten una sincronización real.
+    private final Map<Long, ReentrantLock> bloqueosPorCita = new ConcurrentHashMap<>();
 
     @Override
     public synchronized Cita guardar(Cita cita) {
@@ -68,5 +73,16 @@ public class InMemoryCitaRepositoryAdapter implements CitaRepositoryPort {
             .filter(c -> hasta == null || !c.getInicio().toLocalDate().isAfter(hasta))
             .sorted((a, b) -> a.getInicio().compareTo(b.getInicio()))
             .toList();
+    }
+
+    @Override
+    public <T> T conBloqueoDeEscritura(Long citaId, Supplier<T> accion) {
+        ReentrantLock bloqueo = bloqueosPorCita.computeIfAbsent(citaId, id -> new ReentrantLock());
+        bloqueo.lock();
+        try {
+            return accion.get();
+        } finally {
+            bloqueo.unlock();
+        }
     }
 }

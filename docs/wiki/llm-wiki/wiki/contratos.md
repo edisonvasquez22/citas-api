@@ -62,7 +62,7 @@ Notas de diseño relevantes para quien consuma esto desde `citas-web`:
 |---|---|---|---|---|---|
 | GET | `/api/appointments/mine?estado=&fecha=` | — | `200` lista `MiCitaResponse` (sedeId, profesionalId, especialidadId, estado, inicio, fin, motivoDecision, reprogramacion) | — | autenticado; ownership estricto (solo las propias) |
 | POST | `/api/appointments/{id}/cancel` | — | `200` `CierreResponse` (citaId, estado=CANCELLED) | `409` cita ya terminal; `400` cita pasada; `404` no es propia | autenticado |
-| POST | `/api/appointments/{id}/reschedule` | `ReprogramarRequest` (sedeId, fecha, horaInicio) | `200` `ReprogramarResponse` (solicitudId, citaId, estado=PENDING, inicioSolicitado, finSolicitado) | `400` cita no APPROVED/no futura/sede no habilitada; `409` nuevo horario no disponible; `404` no es propia | autenticado |
+| POST | `/api/appointments/{id}/reschedule` | `ReprogramarRequest` (sedeId, fecha, horaInicio) | `200` `ReprogramarResponse` (solicitudId, citaId, estado=PENDING, inicioSolicitado, finSolicitado) | `400` cita no APPROVED/no futura/sede no habilitada; `409` nuevo horario no disponible **o ya existe una solicitud PENDING para esta cita** (agregado 2026-09-29, LOOP_03); `404` no es propia | autenticado |
 | GET | `/api/admin/reschedules` | — | `200` lista `Resumen` (solicitudes PENDING) | — | ADMIN |
 | POST | `/api/admin/reschedules/{id}/approve` | — | `200` `Resumen` (estado=APPROVED) | `409` no estaba PENDING; `404` | ADMIN |
 | POST | `/api/admin/reschedules/{id}/reject` | `{motivo}` | `200` `Resumen` (estado=REJECTED, motivoDecision) | `400` sin motivo; `409` no estaba PENDING; `404` | ADMIN |

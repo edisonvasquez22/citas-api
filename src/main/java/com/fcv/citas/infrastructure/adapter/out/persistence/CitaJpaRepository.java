@@ -1,12 +1,24 @@
 package com.fcv.citas.infrastructure.adapter.out.persistence;
 
+import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface CitaJpaRepository extends JpaRepository<CitaJpaEntity, Long> {
+
+    /**
+     * HU-019 (LOOP_03): SELECT ... FOR UPDATE — bloqueo de fila InnoDB vigente hasta que termine la
+     * transacción que lo pidió. No se usa el resultado, solo el efecto de bloqueo (ver
+     * {@code CitaJpaAdapter#conBloqueoDeEscritura}).
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM CitaJpaEntity c WHERE c.id = :id")
+    Optional<CitaJpaEntity> buscarPorIdConBloqueo(@Param("id") Long id);
 
     /** HU-016 CA-04: bandeja filtrable. {@code desde}/{@code hasta} acotan el día (ambos nulos = sin filtro de fecha). */
     @Query("SELECT c FROM CitaJpaEntity c WHERE c.status.code = :statusCode "

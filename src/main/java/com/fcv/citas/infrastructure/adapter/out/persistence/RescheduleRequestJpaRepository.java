@@ -12,4 +12,6 @@ public interface RescheduleRequestJpaRepository extends JpaRepository<Reschedule
     List<RescheduleRequestJpaEntity> listarPorEstado(@Param("statusCode") String statusCode);
 
     Optional<RescheduleRequestJpaEntity> findFirstByAppointmentIdOrderByIdDesc(Long appointmentId);
+
+    boolean existsByAppointmentIdAndStatus_Code(Long appointmentId, String statusCode);
 }

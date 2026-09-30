@@ -7,6 +7,7 @@ import com.fcv.citas.application.port.out.SlotRepositoryPort;
 import com.fcv.citas.application.port.out.SolicitudReprogramacionRepositoryPort;
 import com.fcv.citas.domain.exception.HorarioNoDisponibleException;
 import com.fcv.citas.domain.exception.RecursoNoEncontradoException;
+import com.fcv.citas.domain.exception.TransicionEstadoInvalidaException;
 import com.fcv.citas.domain.exception.ValidacionNegocioException;
 import com.fcv.citas.domain.model.BloqueDisponibilidad;
 import com.fcv.citas.domain.model.Cita;
@@ -70,24 +71,35 @@ public class SolicitarReprogramacionService implements SolicitarReprogramacionUs
         LocalDateTime nuevoFin = nuevoInicio.plusMinutes(duracionMinutos);
         int slotsNecesarios = (int) (duracionMinutos / BloqueDisponibilidad.DURACION_SLOT_MINUTOS);
 
-        List<Long> nuevosSlotIds = slotRepository
-            .buscarSlotsConsecutivosLibres(cita.getProfesionalId(), command.nuevaSedeId(), nuevoInicio,
-                slotsNecesarios)
-            .orElseThrow(() -> new HorarioNoDisponibleException("El horario solicitado ya no está disponible"));
+        // LOOP_03 (RN nueva): serializa "verificar que no hay ya una reprogramación PENDING para esta cita +
+        // reservar el horario nuevo + crear la solicitud" entre hilos/transacciones concurrentes sobre la
+        // MISMA cita — sin este bloqueo, dos solicitudes simultáneas podrían quedar ambas PENDING (la cita
+        // en sí no cambia de estado al solicitar, RN-10, así que no hay otra defensa natural contra esto).
+        return citaRepository.conBloqueoDeEscritura(cita.getId(), () -> {
+            if (solicitudRepository.existePendientePorCita(cita.getId())) {
+                throw new TransicionEstadoInvalidaException(
+                    "Ya existe una solicitud de reprogramación pendiente para esta cita");
+            }
 
-        int reservados = slotRepository.reservarAtomicamente(nuevosSlotIds, cita.getId());
-        if (reservados != nuevosSlotIds.size()) {
-            slotRepository.liberarSlots(nuevosSlotIds);
-            throw new HorarioNoDisponibleException(
-                "El horario solicitado dejó de estar disponible mientras se confirmaba la solicitud");
-        }
+            List<Long> nuevosSlotIds = slotRepository
+                .buscarSlotsConsecutivosLibres(cita.getProfesionalId(), command.nuevaSedeId(), nuevoInicio,
+                    slotsNecesarios)
+                .orElseThrow(() -> new HorarioNoDisponibleException("El horario solicitado ya no está disponible"));
 
-        SolicitudReprogramacion solicitud = SolicitudReprogramacion.solicitar(cita.getId(),
-            command.pacienteUsuarioId(), command.nuevaSedeId(), cita.getInicio(), cita.getFin(), nuevoInicio,
-            nuevoFin);
-        SolicitudReprogramacion guardada = solicitudRepository.guardar(solicitud);
+            int reservados = slotRepository.reservarAtomicamente(nuevosSlotIds, cita.getId());
+            if (reservados != nuevosSlotIds.size()) {
+                slotRepository.liberarSlots(nuevosSlotIds);
+                throw new HorarioNoDisponibleException(
+                    "El horario solicitado dejó de estar disponible mientras se confirmaba la solicitud");
+            }
 
-        return new Resultado(guardada.getId(), cita.getId(), guardada.getEstado().name(), nuevoInicio, nuevoFin);
+            SolicitudReprogramacion solicitud = SolicitudReprogramacion.solicitar(cita.getId(),
+                command.pacienteUsuarioId(), command.nuevaSedeId(), cita.getInicio(), cita.getFin(), nuevoInicio,
+                nuevoFin);
+            SolicitudReprogramacion guardada = solicitudRepository.guardar(solicitud);
+
+            return new Resultado(guardada.getId(), cita.getId(), guardada.getEstado().name(), nuevoInicio, nuevoFin);
+        });
     }
 
     private Cita obtenerPropia(Long pacienteUsuarioId, Long citaId) {

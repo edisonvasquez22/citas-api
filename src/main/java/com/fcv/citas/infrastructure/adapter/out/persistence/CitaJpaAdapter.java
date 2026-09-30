@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,6 +70,16 @@ public class CitaJpaAdapter implements CitaRepositoryPort {
         LocalDateTime hastaDt = hasta == null ? null : hasta.plusDays(1).atStartOfDay();
         return citaJpaRepository.listarPorProfesional(profesionalId, statusCode, sedeId, desdeDt, hastaDt).stream()
             .map(this::aDominio).toList();
+    }
+
+    @Override
+    @Transactional
+    public <T> T conBloqueoDeEscritura(Long citaId, Supplier<T> accion) {
+        // El SELECT ... FOR UPDATE toma un bloqueo de fila InnoDB que se libera solo al terminar esta
+        // transacción (join a la transacción @Transactional del método que llamó, propagación REQUIRED por
+        // defecto) — así que sigue vigente durante toda la ejecución de `accion`.
+        citaJpaRepository.buscarPorIdConBloqueo(citaId);
+        return accion.get();
     }
 
     private Cita aDominio(CitaJpaEntity entidad) {

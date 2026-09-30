@@ -5,6 +5,7 @@ import com.fcv.citas.domain.model.EstadoCita;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /** Puerto de salida para citas (HU-014/HU-015/HU-016). */
 public interface CitaRepositoryPort {
@@ -24,4 +25,15 @@ public interface CitaRepositoryPort {
     /** HU-021: citas de un profesional en un estado dado (típicamente APPROVED), con filtros opcionales. */
     List<Cita> listarPorProfesional(Long profesionalId, EstadoCita estado, Long sedeId, LocalDate desde,
                                      LocalDate hasta);
+
+    /**
+     * HU-019 (LOOP_03): ejecuta {@code accion} bajo un bloqueo de escritura sobre la cita {@code citaId},
+     * serializando así cualquier otra llamada concurrente que intente lo mismo sobre la MISMA cita. La cita
+     * en sí no se lee ni se modifica por este método — solo sirve como boundary de sincronización para
+     * evitar condiciones de carrera del tipo "verificar algo sobre esta cita + escribir algo relacionado"
+     * entre transacciones/hilos concurrentes (p. ej. impedir dos solicitudes de reprogramación PENDING a la
+     * vez, ver {@code SolicitarReprogramacionService}). No confundir con RN-01 (retención atómica de slots,
+     * que usa un mecanismo distinto, un UPDATE condicionado).
+     */
+    <T> T conBloqueoDeEscritura(Long citaId, Supplier<T> accion);
 }

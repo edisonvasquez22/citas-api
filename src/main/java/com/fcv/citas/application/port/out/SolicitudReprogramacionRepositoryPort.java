@@ -22,4 +22,11 @@ public interface SolicitudReprogramacionRepositoryPort {
      * tenía forma de conocer el desenlace de su solicitud una vez decidida.
      */
     Optional<SolicitudReprogramacion> buscarUltimaPorCita(Long citaId);
+
+    /**
+     * HU-019 (LOOP_03): ¿ya existe una solicitud PENDING para esta cita? Se usa junto con
+     * {@code CitaRepositoryPort.conBloqueoDeEscritura} para impedir que dos solicitudes de reprogramación
+     * concurrentes sobre la misma cita queden ambas PENDING.
+     */
+    boolean existePendientePorCita(Long citaId);
 }

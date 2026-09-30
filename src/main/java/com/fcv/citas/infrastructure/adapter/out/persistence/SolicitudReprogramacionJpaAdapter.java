@@ -53,6 +53,11 @@ public class SolicitudReprogramacionJpaAdapter implements SolicitudReprogramacio
         return repository.findFirstByAppointmentIdOrderByIdDesc(citaId).map(this::aDominio);
     }
 
+    @Override
+    public boolean existePendientePorCita(Long citaId) {
+        return repository.existsByAppointmentIdAndStatus_Code(citaId, EstadoSolicitudReprogramacion.PENDING.name());
+    }
+
     private SolicitudReprogramacion aDominio(RescheduleRequestJpaEntity entidad) {
         return SolicitudReprogramacion.reconstruir(entidad.getId(), entidad.getAppointmentId(),
             entidad.getRequestedByUserId(), entidad.getRequestedLocationId(),

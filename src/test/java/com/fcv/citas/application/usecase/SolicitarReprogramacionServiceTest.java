@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.fcv.citas.application.port.in.SolicitarReprogramacionUseCase.Command;
 import com.fcv.citas.domain.exception.HorarioNoDisponibleException;
 import com.fcv.citas.domain.exception.RecursoNoEncontradoException;
+import com.fcv.citas.domain.exception.TransicionEstadoInvalidaException;
 import com.fcv.citas.domain.exception.ValidacionNegocioException;
 import com.fcv.citas.domain.model.AsignacionEspecialidad;
 import com.fcv.citas.domain.model.BloqueDisponibilidad;
@@ -20,17 +21,29 @@ import com.fcv.citas.testsupport.InMemorySolicitudReprogramacionRepositoryAdapte
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** HU-019: CA-01 a CA-03 (solicitud válida, cita no reprogramable, nuevo horario no disponible). */
+/**
+ * HU-019: CA-01 a CA-03 (solicitud válida, cita no reprogramable, nuevo horario no disponible) y LOOP_03
+ * (una cita no puede tener dos solicitudes de reprogramación PENDING a la vez, ni siquiera bajo
+ * concurrencia real — ver `prompts/goal-loop/LOOP_03_RETO_INDEPENDIENTE.md`).
+ */
 class SolicitarReprogramacionServiceTest {
 
     private static final Long SEDE = 1L;
     private static final Long PACIENTE = 1L;
 
     private InMemoryCitaRepositoryAdapter citaRepository;
+    private InMemoryDisponibilidadStore store;
     private InMemorySlotRepositoryAdapter slotRepository;
     private InMemorySolicitudReprogramacionRepositoryAdapter solicitudRepository;
     private SolicitarReprogramacionService service;
@@ -47,7 +60,7 @@ class SolicitarReprogramacionServiceTest {
         profesionalId = profesionalRepository.guardar(Profesional.registrar(100L, "PROF-001", "MAT-001",
             Set.of(new AsignacionEspecialidad(1L, true)), Set.of(SEDE))).getId();
 
-        InMemoryDisponibilidadStore store = new InMemoryDisponibilidadStore();
+        store = new InMemoryDisponibilidadStore();
         fechaOriginal = LocalDate.now().plusDays(1);
         horaOriginal = LocalTime.of(8, 0);
         fechaNueva = LocalDate.now().plusDays(2);
@@ -117,5 +130,69 @@ class SolicitarReprogramacionServiceTest {
 
         assertThat(citaRepository.buscarPorId(citaOriginal.getId())).get()
             .extracting(Cita::getInicio).isEqualTo(citaOriginal.getInicio());
+    }
+
+    @Test
+    void solicitar_conSolicitudPendienteExistente_seRechaza() {
+        service.solicitar(comando());
+
+        LocalDate otraFechaNueva = LocalDate.now().plusDays(3);
+        LocalTime otraHoraNueva = LocalTime.of(10, 0);
+        store.crearBloque(BloqueDisponibilidad.crear(profesionalId, SEDE, otraFechaNueva, otraHoraNueva,
+            otraHoraNueva.plusMinutes(30), LocalDateTime.now()));
+
+        assertThatThrownBy(
+            () -> service.solicitar(new Command(PACIENTE, citaOriginal.getId(), SEDE, otraFechaNueva, otraHoraNueva)))
+            .isInstanceOf(TransicionEstadoInvalidaException.class);
+    }
+
+    @Test
+    void solicitar_dosSolicitudesConcurrentesSobreLaMismaCita_soloUnaQuedaPending() throws InterruptedException {
+        // Cada hilo pide un horario NUEVO distinto (cada uno con su propio slot libre, sin conflicto entre
+        // sí) para aislar la regla que se está probando (LOOP_03: una PENDING por cita) de RN-01 (retención
+        // atómica de slots), que ya tiene su propia prueba de concurrencia dedicada en HU-014/HU-015.
+        int hilos = 8;
+        for (int i = 0; i < hilos; i++) {
+            LocalDate fecha = LocalDate.now().plusDays(10 + i);
+            LocalTime hora = LocalTime.of(8, 0);
+            store.crearBloque(BloqueDisponibilidad.crear(profesionalId, SEDE, fecha, hora, hora.plusMinutes(30),
+                LocalDateTime.now()));
+        }
+
+        ExecutorService executor = Executors.newFixedThreadPool(hilos);
+        CountDownLatch salida = new CountDownLatch(1);
+        CountDownLatch listos = new CountDownLatch(hilos);
+        AtomicInteger exitos = new AtomicInteger(0);
+        AtomicInteger rechazosPorPendiente = new AtomicInteger(0);
+        List<Exception> otrosErrores = new CopyOnWriteArrayList<>();
+
+        for (int i = 0; i < hilos; i++) {
+            LocalDate fecha = LocalDate.now().plusDays(10 + i);
+            LocalTime hora = LocalTime.of(8, 0);
+            executor.submit(() -> {
+                listos.countDown();
+                try {
+                    salida.await();
+                    service.solicitar(new Command(PACIENTE, citaOriginal.getId(), SEDE, fecha, hora));
+                    exitos.incrementAndGet();
+                } catch (TransicionEstadoInvalidaException e) {
+                    rechazosPorPendiente.incrementAndGet();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (Exception e) {
+                    otrosErrores.add(e);
+                }
+            });
+        }
+
+        listos.await(5, TimeUnit.SECONDS);
+        salida.countDown();
+        executor.shutdown();
+        boolean terminado = executor.awaitTermination(10, TimeUnit.SECONDS);
+
+        assertThat(terminado).isTrue();
+        assertThat(otrosErrores).isEmpty();
+        assertThat(exitos.get()).isEqualTo(1);
+        assertThat(rechazosPorPendiente.get()).isEqualTo(hilos - 1);
     }
 }
