@@ -95,6 +95,28 @@ public final class Usuario {
             passwordHash, roles, activo);
     }
 
+    /**
+     * HU-004 CA-02: actualiza únicamente los campos permitidos (nombres,
+     * apellidos, teléfono). Email y documento no son editables por este medio
+     * (fuera de alcance de HU-004) — quien llama nunca los pasa aquí.
+     */
+    public Usuario actualizarPerfil(String nombres, String apellidos, String telefono) {
+        requerirNoVacio(nombres, "nombres");
+        requerirNoVacio(apellidos, "apellidos");
+        requerirNoVacio(telefono, "telefono");
+        return new Usuario(id, nombres.trim(), apellidos.trim(), tipoDocumento, numeroDocumento, email,
+            telefono.trim(), passwordHash, roles, activo);
+    }
+
+    /** HU-003 CA-02: reemplaza el hash de contraseña (ya hasheada por PasswordHasherPort). */
+    public Usuario cambiarPassword(String nuevoPasswordHash) {
+        if (nuevoPasswordHash == null || nuevoPasswordHash.isBlank()) {
+            throw new IllegalArgumentException("passwordHash no puede estar vacío");
+        }
+        return new Usuario(id, nombres, apellidos, tipoDocumento, numeroDocumento, email, telefono,
+            nuevoPasswordHash, roles, activo);
+    }
+
     private static void requerirNoVacio(String valor, String campo) {
         if (valor == null || valor.isBlank()) {
             throw new IllegalArgumentException("El campo '" + campo + "' no puede estar vacío");

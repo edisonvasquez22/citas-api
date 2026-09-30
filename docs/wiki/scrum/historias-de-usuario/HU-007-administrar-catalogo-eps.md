@@ -2,7 +2,7 @@
 id: HU-007
 tipo: historia-de-usuario
 titulo: "Administrar catálogo de EPS"
-estado: Borrador
+estado: En desarrollo
 epica: "[[EP-003-catalogos-del-sistema]]"
 esfuerzo: "Bajo"
 sprint_sugerido: "Sprint 3 (S4)"
@@ -52,15 +52,16 @@ RF-06. No se permite borrado físico de una EPS referenciada por afiliaciones; s
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Casos de uso CRUD de EPS**
+- [x] **T-01 — Casos de uso CRUD de EPS**
   Dificultad: Bajo
   Descripción: crear/editar/activar/desactivar, con verificación de referencias antes de permitir desactivar si aplica alguna regla adicional.
-- [ ] **T-02 — Endpoints REST + migración Flyway**
+- [x] **T-02 — Endpoints REST + migración Flyway**
   Dificultad: Bajo
-  Descripción: bloqueada hasta contar con el diseño 3FN aprobado del usuario.
-- [ ] **T-03 — Pruebas**
+  Descripción: `eps` ya existía en `V1__esquema_inicial.sql` — solo faltaba el seed demo (`V3`, ver [[decisiones]]).
+  `/api/admin/eps` (CRUD) + `/api/eps` (lectura pública del catálogo activo).
+- [x] **T-03 — Pruebas**
   Dificultad: Bajo
-  Descripción: creación, edición, desactivación, intento de borrado físico de una EPS referenciada.
+  Descripción: creación, edición, desactivación, código duplicado.
 
 ## Criterios de aceptación
 
@@ -78,22 +79,25 @@ RF-06. No se permite borrado físico de una EPS referenciada por afiliaciones; s
 
 ## Definition of Done
 
-- [ ] CA-01 y CA-02 validados con evidencia.
-- [ ] Migración Flyway coherente con el diseño 3FN aprobado.
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 y CA-02 validados con evidencia.
+- [x] Migración Flyway coherente con el diseño 3FN aprobado (tabla ya existía en V1; `V3` solo agrega el seed demo).
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Pendiente | — | — |
-| CA-02 | Pendiente | — | — |
-| DoD-01 | Pendiente | — | — |
+| CA-01 | Cumple | `AdministrarEpsServiceTest.crear_conCodigoNuevo_quedaEnElCatalogo`, `cambiarEstado_desactivaLaEps` | Mismo patrón que HU-009 (especialidades). |
+| CA-02 | Cumple | `AdminEpsController` no expone ningún `DELETE` | Igual que el catálogo de especialidades: el borrado físico es estructuralmente imposible vía la API (solo crear/editar/activar/desactivar), no hace falta una guarda activa. |
+| DoD-01 | Cumple | `mvn test`: 133/133 BUILD SUCCESS | — |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
+- 2026-09-30 — Implementada: mismo patrón exacto que HU-009 (Especialidad). `eps` ya existía en el esquema;
+  `V3__seed_catalogo_eps.sql` agrega el seed demo que faltaba. `/api/admin/eps` (ADMIN) + `/api/eps` (lectura
+  pública del catálogo activo, usada por HU-005). Pasa de `Borrador` a `En desarrollo`. `mvn test`: 133/133.
 
 ## Notas y decisiones
 

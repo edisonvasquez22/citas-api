@@ -31,4 +31,13 @@ public final class AuthDtos {
     public record RefreshRequest(@NotBlank String refreshToken) {}
 
     public record LogoutRequest(@NotBlank String refreshToken) {}
+
+    public record PasswordResetRequestRequest(@NotBlank @Email String email) {}
+
+    public record PasswordResetRequestResponse(String message) {}
+
+    public record PasswordResetConfirmRequest(
+        @NotBlank String token,
+        @NotBlank @Size(min = 8, max = 100) String nuevaPassword
+    ) {}
 }

@@ -1,10 +1,14 @@
 package com.fcv.citas.testsupport;
 
+import com.fcv.citas.application.port.out.AfiliacionRepositoryPort;
 import com.fcv.citas.application.port.out.BloqueDisponibilidadRepositoryPort;
 import com.fcv.citas.application.port.out.CitaRepositoryPort;
+import com.fcv.citas.application.port.out.EpsRepositoryPort;
 import com.fcv.citas.application.port.out.EspecialidadRepositoryPort;
 import com.fcv.citas.application.port.out.HistorialEstadoCitaPort;
 import com.fcv.citas.application.port.out.LocationRepositoryPort;
+import com.fcv.citas.application.port.out.PasswordResetTokenRepositoryPort;
+import com.fcv.citas.application.port.out.PlanEpsRepositoryPort;
 import com.fcv.citas.application.port.out.ProfesionalRepositoryPort;
 import com.fcv.citas.application.port.out.RefreshTokenStorePort;
 import com.fcv.citas.application.port.out.SlotRepositoryPort;
@@ -75,5 +79,25 @@ public class InMemoryPersistenceTestConfig {
     @Bean
     public SolicitudReprogramacionRepositoryPort solicitudReprogramacionRepositoryPort() {
         return new InMemorySolicitudReprogramacionRepositoryAdapter();
+    }
+
+    @Bean
+    public EpsRepositoryPort epsRepositoryPort() {
+        return new InMemoryEpsRepositoryAdapter();
+    }
+
+    @Bean
+    public PlanEpsRepositoryPort planEpsRepositoryPort() {
+        return new InMemoryPlanEpsRepositoryAdapter();
+    }
+
+    @Bean
+    public AfiliacionRepositoryPort afiliacionRepositoryPort() {
+        return new InMemoryAfiliacionRepositoryAdapter();
+    }
+
+    @Bean
+    public PasswordResetTokenRepositoryPort passwordResetTokenRepositoryPort() {
+        return new InMemoryPasswordResetTokenRepositoryAdapter();
     }
 }

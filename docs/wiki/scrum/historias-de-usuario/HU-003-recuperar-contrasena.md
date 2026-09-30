@@ -2,7 +2,7 @@
 id: HU-003
 tipo: historia-de-usuario
 titulo: "Recuperar contraseña"
-estado: Borrador
+estado: En desarrollo
 epica: "[[EP-001-autenticacion-y-cuentas]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 3 (S4)"
@@ -57,16 +57,17 @@ RF-03. El envío real de correo es opcional en este laboratorio: en desarrollo e
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Modelo de dominio `TokenRecuperacion`**
+- [x] **T-01 — Modelo de dominio `TokenRecuperacion`**
   Dificultad: Bajo
   Descripción: invariantes de expiración y de un solo uso.
-- [ ] **T-02 — Casos de uso `SolicitarRecuperacion` y `ConfirmarRecuperacion`**
+- [x] **T-02 — Casos de uso `SolicitarRecuperacion` y `ConfirmarRecuperacion`**
   Dificultad: Medio
   Descripción: generación segura del token, validación de expiración/consumo, nuevo hash de contraseña.
-- [ ] **T-03 — Adaptador REST + migración Flyway de la tabla de tokens de recuperación**
+- [x] **T-03 — Adaptador REST + migración Flyway de la tabla de tokens de recuperación**
   Dificultad: Medio
-  Descripción: bloqueada hasta contar con el diseño 3FN aprobado del usuario.
-- [ ] **T-04 — Pruebas**
+  Descripción: `password_reset_tokens` ya existía en `V1__esquema_inicial.sql` (esquema de referencia adoptado
+  2026-09-23) — no hizo falta migración nueva. Endpoints `POST /api/auth/password-reset/request|confirm`.
+- [x] **T-04 — Pruebas**
   Dificultad: Medio
   Descripción: solicitud sobre email existente/inexistente (mismo mensaje), confirmación con token válido/expirado/ya usado.
 
@@ -92,24 +93,28 @@ RF-03. El envío real de correo es opcional en este laboratorio: en desarrollo e
 
 ## Definition of Done
 
-- [ ] CA-01 a CA-03 validados con evidencia.
-- [ ] Migración Flyway coherente con el diseño 3FN aprobado.
-- [ ] El token nunca se loguea en texto plano fuera del mecanismo de exposición controlada de desarrollo.
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 a CA-03 validados con evidencia.
+- [x] Migración Flyway coherente con el diseño 3FN aprobado (tabla ya existía en V1, sin migración nueva).
+- [x] El token nunca se loguea en texto plano fuera del mecanismo de exposición controlada de desarrollo.
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Pendiente | — | — |
-| CA-02 | Pendiente | — | — |
-| CA-03 | Pendiente | — | — |
-| DoD-01 | Pendiente | — | — |
+| CA-01 | Cumple | `RecuperarContrasenaServiceTest.solicitar_conEmailExistente_generaUnTokenParaEseUsuario` / `solicitar_conEmailInexistente_noGeneraNingunToken` | El controller responde el mismo `AuthDtos.PasswordResetRequestRequest`→mensaje genérico en ambos casos; la diferencia de comportamiento (token creado o no) es interna, nunca se refleja en la respuesta HTTP. |
+| CA-02 | Cumple | `RecuperarContrasenaServiceTest.confirmar_conTokenValido_actualizaLaPasswordYConsumeElToken` | Verifica el nuevo hash y que el mismo token ya no sirve una segunda vez. |
+| CA-03 | Cumple | `confirmar_conTokenExpirado_seRechazaSinModificarLaPassword`, `confirmar_conTokenYaUsado_seRechazaSinModificarLaPassword`, `confirmar_conTokenInexistente_seRechaza` | 401 vía `TokenInvalidoException` (mismo mapeo que refresh token inválido). |
+| DoD-01 | Cumple | `mvn test`: 133/133 BUILD SUCCESS | Incluye las 22 pruebas nuevas de HU-003/004/005/007/008. |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`; planificada para el incremento de S4 según `GUIA_SESIONES_S2_S6.md`.
+- 2026-09-30 — Implementada: `TokenRecuperacion` (dominio), `RecuperarContrasenaService`, `PasswordResetTokenJpaAdapter`
+  sobre `password_reset_tokens` (ya existía en el esquema), endpoints `POST /api/auth/password-reset/request|confirm`.
+  El token en claro solo se expone por log estructurado del servidor (nunca en la respuesta HTTP), para no romper
+  CA-01. Pasa de `Borrador` a `En desarrollo`. `mvn test`: 133/133.
 
 ## Notas y decisiones
 

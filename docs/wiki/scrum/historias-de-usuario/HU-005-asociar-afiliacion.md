@@ -2,7 +2,7 @@
 id: HU-005
 tipo: historia-de-usuario
 titulo: "Asociar afiliación EPS/plan/régimen"
-estado: Borrador
+estado: En desarrollo
 epica: "[[EP-002-perfil-y-afiliacion]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 3 (S4)"
@@ -54,13 +54,14 @@ RF-04 (parte de afiliación). La aplicación debe evitar duplicar EPS/régimen/p
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Caso de uso `AsociarAfiliacion`**
+- [x] **T-01 — Caso de uso `AsociarAfiliacion`**
   Dificultad: Medio
   Descripción: valida EPS/plan/régimen activos y consistentes; reemplaza afiliación previa si existe.
-- [ ] **T-02 — Endpoint REST + migración Flyway de afiliación**
+- [x] **T-02 — Endpoint REST + migración Flyway de afiliación**
   Dificultad: Medio
-  Descripción: bloqueada hasta contar con el diseño 3FN aprobado del usuario.
-- [ ] **T-03 — Pruebas**
+  Descripción: `user_insurance_affiliations` ya existía en `V1__esquema_inicial.sql` — sin migración nueva.
+  `GET`/`PUT /api/users/me/afiliacion`.
+- [x] **T-03 — Pruebas**
   Dificultad: Medio
   Descripción: afiliación válida, plan que no pertenece a la EPS seleccionada, EPS/plan inactivo.
 
@@ -86,23 +87,27 @@ RF-04 (parte de afiliación). La aplicación debe evitar duplicar EPS/régimen/p
 
 ## Definition of Done
 
-- [ ] CA-01 a CA-03 validados con evidencia.
-- [ ] Migración Flyway coherente con el diseño 3FN aprobado.
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 a CA-03 validados con evidencia.
+- [x] Migración Flyway coherente con el diseño 3FN aprobado (tabla ya existía en V1, sin migración nueva).
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Pendiente | — | — |
-| CA-02 | Pendiente | — | — |
-| CA-03 | Pendiente | — | — |
-| DoD-01 | Pendiente | — | — |
+| CA-01 | Cumple | `GestionarAfiliacionServiceTest.asociar_conDatosValidos_quedaComoAfiliacionVigente`, `asociar_reemplazaLaAfiliacionVigentePrevia` | La afiliación previa queda `vigente=false` (historial), no se borra. |
+| CA-02 | Cumple | `asociar_planQueNoPerteneceALaEps_seRechaza` | 400 vía `ValidacionNegocioException`. |
+| CA-03 | Cumple | `asociar_epsInactiva_seRechaza`, `asociar_planInactivo_seRechaza` | 400 vía `ValidacionNegocioException`. |
+| DoD-01 | Cumple | `mvn test`: 133/133 BUILD SUCCESS | — |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
+- 2026-09-30 — Implementada: `Afiliacion` (dominio) + `GestionarAfiliacionService` sobre
+  `user_insurance_affiliations` (ya existía en el esquema, sin migración nueva); `GET`/`PUT /api/users/me/afiliacion`.
+  El régimen no se elige por separado: viaja implícito en el plan seleccionado (`eps_plans.regime_id`), consistente
+  con el esquema de referencia. Pasa de `Borrador` a `En desarrollo`. `mvn test`: 133/133.
 
 ## Notas y decisiones
 

@@ -2,7 +2,7 @@
 id: HU-004
 tipo: historia-de-usuario
 titulo: "Consultar y actualizar perfil"
-estado: Borrador
+estado: En desarrollo
 epica: "[[EP-002-perfil-y-afiliacion]]"
 esfuerzo: "Bajo"
 sprint_sugerido: "Sprint 3 (S4)"
@@ -55,13 +55,13 @@ RF-04 (parte de perfil). No incluye la afiliación EPS/plan/régimen, cubierta p
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Casos de uso `ConsultarPerfil`/`ActualizarPerfil`**
+- [x] **T-01 — Casos de uso `ConsultarPerfil`/`ActualizarPerfil`**
   Dificultad: Bajo
   Descripción: aplican reglas de ownership y validación de campos editables.
-- [ ] **T-02 — Endpoints REST `GET`/`PATCH /api/users/me`**
+- [x] **T-02 — Endpoints REST `GET`/`PATCH /api/users/me`**
   Dificultad: Bajo
   Descripción: DTOs de request/response, autorización por ownership.
-- [ ] **T-03 — Pruebas**
+- [x] **T-03 — Pruebas**
   Dificultad: Bajo
   Descripción: consulta propia, actualización válida, intento de editar campo no permitido.
 
@@ -87,23 +87,25 @@ RF-04 (parte de perfil). No incluye la afiliación EPS/plan/régimen, cubierta p
 
 ## Definition of Done
 
-- [ ] CA-01 a CA-03 validados con evidencia.
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Contrato reflejado en [[HU-024-contrato-rest-citas-api]].
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 a CA-03 validados con evidencia.
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Contrato reflejado en [[HU-024-contrato-rest-citas-api]].
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Pendiente | — | — |
-| CA-02 | Pendiente | — | — |
-| CA-03 | Pendiente | — | — |
-| DoD-01 | Pendiente | — | — |
+| CA-01 | Cumple | `GestionarPerfilServiceTest.consultar_devuelveLosDatosPropios` | Ownership por diseño: el id viene de `authentication.getName()` (JWT), nunca de un parámetro manipulable. |
+| CA-02 | Cumple | `actualizar_conCamposValidos_quedaPersistido` | nombres/apellidos/teléfono se persisten y se reflejan en una consulta posterior. |
+| CA-03 | Cumple | `actualizar_noModificaEmailNiDocumento` | El `ActualizarPerfilRequest` ni siquiera declara campos `email`/`numeroDocumento`: un intento de enviarlos se ignora por construcción (Jackson los descarta), sin romper el resto de la actualización. |
+| DoD-01 | Cumple | `mvn test`: 133/133 BUILD SUCCESS | — |
 
 ## Historial de validación
 
 - 2026-09-17 — HU creada en estado `Borrador`.
+- 2026-09-30 — Implementada: `GestionarPerfilService` + `GET`/`PATCH /api/users/me` sobre `UsuarioRepositoryPort`
+  existente (sin persistencia nueva). Pasa de `Borrador` a `En desarrollo`. `mvn test`: 133/133.
 
 ## Notas y decisiones
 

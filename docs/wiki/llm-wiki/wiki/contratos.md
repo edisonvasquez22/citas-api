@@ -1,11 +1,11 @@
 ---
 tipo: wiki
-actualizado: 2026-09-29
+actualizado: 2026-09-30
 ---
 
 # Contratos REST — `citas-api` ↔ `citas-web`
 
-Se actualiza junto con cada HU que agrega/cambia un endpoint (HU-024). Estado tras el incremento S4 (backend).
+Se actualiza junto con cada HU que agrega/cambia un endpoint (HU-024). Estado tras HU-003/004/005/007/008 (backend).
 
 ## Convenciones fijadas
 
@@ -76,10 +76,48 @@ Notas de diseño de HU-019/HU-020 (reprogramación): durante el `PENDING`, la fr
 
 Fuente de verdad detallada: `citas-api/src/main/java/com/fcv/citas/infrastructure/adapter/in/web/`. Swagger UI (springdoc 2.8.17) disponible en `/swagger-ui.html` una vez el backend esté corriendo.
 
+## Endpoints implementados (HU-003, HU-004, HU-005, HU-007, HU-008 — 2026-09-30)
+
+| Método | Path | Body | Respuesta | Errores | Autorización |
+|---|---|---|---|---|---|
+| POST | `/api/auth/password-reset/request` | `PasswordResetRequestRequest` (email) | `200` `{message}` genérico | Ninguno propagado al cliente — nunca revela si el email existe (CA-01) | público |
+| POST | `/api/auth/password-reset/confirm` | `PasswordResetConfirmRequest` (token, nuevaPassword) | `204` | `401` token inválido/expirado/ya usado | público |
+| GET | `/api/users/me` | — | `200` `PerfilResponse` (id, nombres, apellidos, tipoDocumento, numeroDocumento, email, telefono) | — | autenticado; ownership por JWT (sin path/query param) |
+| PATCH | `/api/users/me` | `ActualizarPerfilRequest` (nombres, apellidos, telefono) | `200` `PerfilResponse` | `400` validación | autenticado |
+| GET | `/api/users/me/afiliacion` | — | `200` `AfiliacionResponse` (afiliacionId, epsId, epsNombre, planId, planNombre, regimenId, numeroAfiliacion) | `404` sin afiliación registrada | autenticado |
+| PUT | `/api/users/me/afiliacion` | `AsociarAfiliacionRequest` (epsId, planId, numeroAfiliacion) | `200` `AfiliacionResponse` | `400` plan no pertenece a la EPS / EPS o plan inactivo; `404` EPS/plan inexistente | autenticado |
+| GET | `/api/eps` | — | `200` lista `EpsDtos.Response` (solo activas) | — | autenticado (cualquier rol) |
+| GET | `/api/admin/eps` | — | `200` lista `EpsDtos.Response` (todas) | — | ADMIN |
+| POST | `/api/admin/eps` | `CrearRequest` (codigo, nombre) | `201` `Response` | `400` código duplicado | ADMIN |
+| PUT | `/api/admin/eps/{id}` | `EditarRequest` (nombre) | `200` `Response` | `404` | ADMIN |
+| PATCH | `/api/admin/eps/{id}/status` | `{activa}` | `200` `Response` | `404` | ADMIN |
+| GET | `/api/eps/{epsId}/plans` | — | `200` lista `PlanEpsDtos.Response` (solo activos de esa EPS) | — | autenticado (cualquier rol) |
+| GET | `/api/admin/eps/{epsId}/plans` | — | `200` lista `Response` (todos los de esa EPS) | — | ADMIN |
+| POST | `/api/admin/eps/{epsId}/plans` | `CrearRequest` (regimenId, codigo, nombre) | `201` `Response` | `400` código duplicado en esa EPS; `404` EPS inexistente | ADMIN |
+| PUT | `/api/admin/eps/{epsId}/plans/{id}` | `EditarRequest` (nombre) | `200` `Response` | `404` | ADMIN |
+| PATCH | `/api/admin/eps/{epsId}/plans/{id}/status` | `{activo}` | `200` `Response` | `404` | ADMIN |
+
+Notas de diseño:
+
+- Ninguna de estas 5 HU necesitó una migración Flyway nueva: `password_reset_tokens`, `eps`, `eps_plans`,
+  `user_insurance_affiliations` e `insurance_regimes` ya existían en `V1__esquema_inicial.sql` desde la adopción
+  del esquema de referencia (2026-09-23). Solo faltaba `V3__seed_catalogo_eps.sql` (datos demo de EPS/planes que
+  nunca se habían sembrado).
+- `POST /api/auth/password-reset/request` **siempre** responde el mismo mensaje genérico, exista o no el email
+  (CA-01). El token en claro nunca viaja en ninguna respuesta HTTP — solo se expone por log estructurado del
+  servidor, ya que el laboratorio no exige SMTP real (ver HU-003).
+- La afiliación (`PUT /api/users/me/afiliacion`) sigue semántica de reemplazo, no de historial acumulado expuesto:
+  el usuario solo puede tener una afiliación vigente a la vez; la anterior queda marcada `vigente=false` en la
+  tabla (no se borra), pero el contrato solo expone la vigente.
+- El régimen (`regimenId`) de un plan no tiene endpoint propio de lectura: es un catálogo fijo de 5 valores
+  precargados por HU-006 (`insurance_regimes`: CONTRIBUTIVO=1, SUBSIDIADO=2, ESPECIAL=3, EXCEPCION=4,
+  PARTICULAR=5) que ninguna HU pidió exponer por su cuenta — el ADMIN los usa como constantes conocidas al crear
+  un plan, y `AfiliacionResponse`/`PlanEpsDtos.Response` solo devuelven el id, no el nombre.
+
 ## Pendiente
 
-- El resto de los endpoints del backlog (EP-002, EP-008 a EP-011: perfil/afiliación, catálogo EPS/planes, recuperar contraseña) — fuera del alcance de S4 según `GUIA_SESIONES_S2_S6.md`, quedan para una aprobación aparte.
-- UI en `citas-web` para HU-017 a HU-022 (backend implementado, frontend pendiente — mismo patrón que S3: diseño visual reservado al usuario vía Stitch/AI Studio).
+- UI en `citas-web` para HU-003/004/005/007/008 y para HU-017 a HU-022 (backend implementado, frontend
+  pendiente — mismo patrón de siempre: diseño visual reservado al usuario vía Stitch/AI Studio).
 - Publicar el JSON/YAML de OpenAPI exportado como artefacto versionado (opcional; hoy se sirve dinámico vía springdoc).
 
 ## Relacionado

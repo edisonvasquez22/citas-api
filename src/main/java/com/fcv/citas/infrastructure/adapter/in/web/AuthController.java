@@ -2,6 +2,7 @@ package com.fcv.citas.infrastructure.adapter.in.web;
 
 import com.fcv.citas.application.port.in.CerrarSesionUseCase;
 import com.fcv.citas.application.port.in.IniciarSesionUseCase;
+import com.fcv.citas.application.port.in.RecuperarContrasenaUseCase;
 import com.fcv.citas.application.port.in.RegistrarUsuarioUseCase;
 import com.fcv.citas.application.port.in.RenovarSesionUseCase;
 import com.fcv.citas.infrastructure.adapter.in.web.dto.AuthDtos;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/** HU-001 (registro) y HU-002 (login/refresh/logout). Ver HU-024 para el contrato completo. */
+/** HU-001 (registro), HU-002 (login/refresh/logout) y HU-003 (recuperar contraseña). Ver HU-024 para el contrato completo. */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -22,15 +23,18 @@ public class AuthController {
     private final IniciarSesionUseCase iniciarSesionUseCase;
     private final RenovarSesionUseCase renovarSesionUseCase;
     private final CerrarSesionUseCase cerrarSesionUseCase;
+    private final RecuperarContrasenaUseCase recuperarContrasenaUseCase;
 
     public AuthController(RegistrarUsuarioUseCase registrarUsuarioUseCase,
                            IniciarSesionUseCase iniciarSesionUseCase,
                            RenovarSesionUseCase renovarSesionUseCase,
-                           CerrarSesionUseCase cerrarSesionUseCase) {
+                           CerrarSesionUseCase cerrarSesionUseCase,
+                           RecuperarContrasenaUseCase recuperarContrasenaUseCase) {
         this.registrarUsuarioUseCase = registrarUsuarioUseCase;
         this.iniciarSesionUseCase = iniciarSesionUseCase;
         this.renovarSesionUseCase = renovarSesionUseCase;
         this.cerrarSesionUseCase = cerrarSesionUseCase;
+        this.recuperarContrasenaUseCase = recuperarContrasenaUseCase;
     }
 
     @PostMapping("/register")
@@ -65,5 +69,20 @@ public class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(@Valid @RequestBody AuthDtos.LogoutRequest request) {
         cerrarSesionUseCase.cerrarSesion(new CerrarSesionUseCase.Command(request.refreshToken()));
+    }
+
+    /** CA-01: mismo mensaje genérico exista o no el email (ver RecuperarContrasenaService). */
+    @PostMapping("/password-reset/request")
+    public AuthDtos.PasswordResetRequestResponse solicitarRecuperacion(
+            @Valid @RequestBody AuthDtos.PasswordResetRequestRequest request) {
+        recuperarContrasenaUseCase.solicitar(request.email());
+        return new AuthDtos.PasswordResetRequestResponse(
+            "Si el email está registrado, se generó un token de recuperación.");
+    }
+
+    @PostMapping("/password-reset/confirm")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void confirmarRecuperacion(@Valid @RequestBody AuthDtos.PasswordResetConfirmRequest request) {
+        recuperarContrasenaUseCase.confirmar(request.token(), request.nuevaPassword());
     }
 }

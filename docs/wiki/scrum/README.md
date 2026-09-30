@@ -97,7 +97,24 @@ Nota de verificación previa a la aprobación: la tarea T-02 de HU-019 mencionab
 
 Backend implementado y probado (`mvn test` 106/106) — 2026-09-29. La UI correspondiente en `citas-web` no se implementó todavía: el diseño visual sigue reservado al usuario (Stitch/AI Studio) — ver `AGENTS.md` raíz regla 11. Nuevo agregado de dominio `SolicitudReprogramacion` para HU-019/HU-020 (sin migración nueva, la tabla ya existía); ver `citas-api/AGENTS.md` y `docs/wiki/llm-wiki/wiki/contratos.md` para el detalle de endpoints y decisiones de diseño.
 
-`HU-003` (recuperar contraseña), `HU-004`/`HU-005` (perfil/afiliación, EP-002) y `HU-007`/`HU-008` (catálogo EPS/planes) quedan en `Borrador`, pendientes de una decisión de aprobación aparte — no forman parte del alcance de S4 según `GUIA_SESIONES_S2_S6.md`, aunque el backlog original las sugería en el mismo sprint.
+## Alcance aprobado fuera de sprint — HU-003/004/005/007/008 (2026-09-30)
+
+`GUIA_SESIONES_S2_S6.md` lista explícitamente "recuperación de contraseña" y "EPS/planes/especialidades CRUD" como
+parte de la funcionalidad a completar en S4, pero la aprobación de S4 del 2026-09-28 (arriba) las había dejado
+fuera. El usuario detectó esa brecha y pidió explícitamente el 2026-09-30 implementarlas todas:
+
+19. [[HU-003-recuperar-contrasena]] — RF-03.
+20. [[HU-004-consultar-y-actualizar-perfil]] — RF-04 (perfil).
+21. [[HU-005-asociar-afiliacion]] — RF-04 (afiliación), depende de HU-004/HU-007/HU-008.
+22. [[HU-007-administrar-catalogo-eps]] — RF-06.
+23. [[HU-008-administrar-catalogo-planes-eps]] — RF-06, depende de HU-007.
+
+Backend implementado y probado (`mvn test` 133/133) — 2026-09-30, mismo patrón hexagonal de siempre. Todas las
+tablas necesarias (`password_reset_tokens`, `eps`, `eps_plans`, `user_insurance_affiliations`,
+`insurance_regimes`) ya existían en `V1__esquema_inicial.sql` desde la adopción del esquema de referencia
+(2026-09-23) — solo hizo falta `V3__seed_catalogo_eps.sql` para los datos demo de EPS/planes que nunca se habían
+sembrado. La UI correspondiente en `citas-web` no se implementó todavía: el diseño visual sigue reservado al
+usuario (Stitch/AI Studio) — ver `AGENTS.md` raíz regla 11.
 
 ## Decisiones/incógnitas pendientes
 
