@@ -11,6 +11,7 @@ import com.fcv.citas.domain.model.Eps;
 import com.fcv.citas.domain.model.PlanEps;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /** HU-005: asocia EPS+plan+carné al usuario autenticado, reemplazando la afiliación vigente previa si existe. */
 @Service
@@ -39,6 +40,7 @@ public class GestionarAfiliacionService implements GestionarAfiliacionUseCase {
     }
 
     @Override
+    @Transactional
     public Resultado asociar(String usuarioId, AsociarCommand command) {
         Eps eps = epsRepository.buscarPorId(command.epsId())
             .orElseThrow(() -> new RecursoNoEncontradoException("EPS no encontrada: " + command.epsId()));
@@ -55,10 +57,17 @@ public class GestionarAfiliacionService implements GestionarAfiliacionUseCase {
         }
 
         Long usuarioIdNumerico = Long.valueOf(usuarioId);
-        afiliacionRepository.buscarVigentePorUsuario(usuarioIdNumerico)
-            .ifPresent(previa -> afiliacionRepository.guardar(previa.cerrar()));
+        String numero = Afiliacion.crear(usuarioIdNumerico, plan.getId(), command.numeroAfiliacion())
+            .getNumeroAfiliacion();
+        Optional<Afiliacion> vigente = afiliacionRepository.buscarVigentePorUsuario(usuarioIdNumerico);
+        if (vigente.isPresent() && vigente.get().corresponde(plan.getId(), numero)) {
+            return aResultado(vigente.get(), eps, plan);
+        }
+        vigente.ifPresent(previa -> afiliacionRepository.guardar(previa.cerrar()));
 
-        Afiliacion nueva = Afiliacion.crear(usuarioIdNumerico, plan.getId(), command.numeroAfiliacion());
+        Afiliacion nueva = afiliacionRepository.buscarPorUsuarioPlanYNumero(usuarioIdNumerico, plan.getId(), numero)
+            .map(Afiliacion::reactivar)
+            .orElseGet(() -> Afiliacion.crear(usuarioIdNumerico, plan.getId(), numero));
         return aResultado(afiliacionRepository.guardar(nueva), eps, plan);
     }
 

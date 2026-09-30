@@ -2,11 +2,14 @@ package com.fcv.citas.application.usecase;
 
 import com.fcv.citas.application.port.in.GestionarReprogramacionesUseCase;
 import com.fcv.citas.application.port.out.CitaRepositoryPort;
+import com.fcv.citas.application.port.out.NotificadorCambioEstadoPort;
 import com.fcv.citas.application.port.out.SlotRepositoryPort;
 import com.fcv.citas.application.port.out.SolicitudReprogramacionRepositoryPort;
 import com.fcv.citas.domain.exception.RecursoNoEncontradoException;
 import com.fcv.citas.domain.model.Cita;
 import com.fcv.citas.domain.model.EstadoSolicitudReprogramacion;
+import com.fcv.citas.domain.model.EventoCambioEstado;
+import com.fcv.citas.domain.model.TipoEventoCita;
 import com.fcv.citas.domain.model.SolicitudReprogramacion;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,12 +27,15 @@ public class GestionarReprogramacionesService implements GestionarReprogramacion
     private final SolicitudReprogramacionRepositoryPort solicitudRepository;
     private final CitaRepositoryPort citaRepository;
     private final SlotRepositoryPort slotRepository;
+    private final NotificadorCambioEstadoPort notificador;
 
     public GestionarReprogramacionesService(SolicitudReprogramacionRepositoryPort solicitudRepository,
-                                             CitaRepositoryPort citaRepository, SlotRepositoryPort slotRepository) {
+                                             CitaRepositoryPort citaRepository, SlotRepositoryPort slotRepository,
+                                             NotificadorCambioEstadoPort notificador) {
         this.solicitudRepository = solicitudRepository;
         this.citaRepository = citaRepository;
         this.slotRepository = slotRepository;
+        this.notificador = notificador;
     }
 
     @Override
@@ -54,6 +60,8 @@ public class GestionarReprogramacionesService implements GestionarReprogramacion
 
         SolicitudReprogramacion aprobada = solicitudRepository.guardar(
             solicitud.aprobar(adminUsuarioId, LocalDateTime.now()));
+        notificador.notificar(EventoCambioEstado.deReprogramacion(TipoEventoCita.REPROGRAMACION_APROBADA,
+            cita.getId(), aprobada.getId(), null));
         return aResumen(aprobada);
     }
 
@@ -69,6 +77,8 @@ public class GestionarReprogramacionesService implements GestionarReprogramacion
 
         SolicitudReprogramacion rechazada = solicitudRepository.guardar(
             solicitud.rechazar(adminUsuarioId, motivo, LocalDateTime.now()));
+        notificador.notificar(EventoCambioEstado.deReprogramacion(TipoEventoCita.REPROGRAMACION_RECHAZADA,
+            cita.getId(), rechazada.getId(), motivo));
         return aResumen(rechazada);
     }
 

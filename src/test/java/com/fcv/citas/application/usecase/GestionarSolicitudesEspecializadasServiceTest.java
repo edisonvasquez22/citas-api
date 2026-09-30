@@ -57,7 +57,8 @@ class GestionarSolicitudesEspecializadasServiceTest {
 
         solicitarService = new SolicitarCitaEspecializadaService(especialidadRepository, profesionalRepository,
             slotRepository, citaRepository, historial);
-        gestionarService = new GestionarSolicitudesEspecializadasService(citaRepository, slotRepository, historial);
+        gestionarService = new GestionarSolicitudesEspecializadasService(citaRepository, slotRepository, historial,
+            evento -> { });
     }
 
     private Long crearSolicitud() {

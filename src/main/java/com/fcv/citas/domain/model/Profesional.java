@@ -43,6 +43,19 @@ public final class Profesional {
         }
         requerirNoVacio(codigoProfesional, "codigoProfesional");
         requerirNoVacio(matricula, "matricula");
+        validarAsignaciones(especialidades, sedeIds);
+        return new Profesional(null, usuarioId, codigoProfesional.trim(), matricula.trim(), true,
+            new LinkedHashSet<>(especialidades), new LinkedHashSet<>(sedeIds));
+    }
+
+    /** Reemplaza especialidades y sedes con las mismas invariantes del registro; no cambia estado ni códigos. */
+    public Profesional reasignar(Set<AsignacionEspecialidad> nuevasEspecialidades, Set<Long> nuevasSedeIds) {
+        validarAsignaciones(nuevasEspecialidades, nuevasSedeIds);
+        return new Profesional(id, usuarioId, codigoProfesional, matricula, activo,
+            new LinkedHashSet<>(nuevasEspecialidades), new LinkedHashSet<>(nuevasSedeIds));
+    }
+
+    private static void validarAsignaciones(Set<AsignacionEspecialidad> especialidades, Set<Long> sedeIds) {
         if (especialidades == null || especialidades.isEmpty()) {
             throw new ValidacionNegocioException("El profesional debe tener al menos una especialidad");
         }
@@ -53,8 +66,6 @@ public final class Profesional {
         if (sedeIds == null || sedeIds.isEmpty()) {
             throw new ValidacionNegocioException("El profesional debe tener al menos una sede");
         }
-        return new Profesional(null, usuarioId, codigoProfesional.trim(), matricula.trim(), true,
-            new LinkedHashSet<>(especialidades), new LinkedHashSet<>(sedeIds));
     }
 
     public static Profesional reconstruir(Long id, Long usuarioId, String codigoProfesional, String matricula,

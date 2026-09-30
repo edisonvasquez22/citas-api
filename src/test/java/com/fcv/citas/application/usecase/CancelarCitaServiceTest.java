@@ -29,7 +29,8 @@ class CancelarCitaServiceTest {
     void setUp() {
         citaRepository = new InMemoryCitaRepositoryAdapter();
         InMemorySlotRepositoryAdapter slotRepository = new InMemorySlotRepositoryAdapter(new InMemoryDisponibilidadStore());
-        service = new CancelarCitaService(citaRepository, slotRepository, new InMemoryHistorialEstadoCitaAdapter());
+        service = new CancelarCitaService(citaRepository, slotRepository, new InMemoryHistorialEstadoCitaAdapter(),
+            evento -> { });
     }
 
     private Cita citaFutura(Long pacienteId) {

@@ -44,6 +44,15 @@ public final class Afiliacion {
         return new Afiliacion(id, usuarioId, planId, numeroAfiliacion, false, vigenteDesde);
     }
 
+    /** Volver a un plan/número ya usado reutiliza ese registro histórico (la BD no admite duplicarlo). */
+    public Afiliacion reactivar() {
+        return new Afiliacion(id, usuarioId, planId, numeroAfiliacion, true, LocalDate.now());
+    }
+
+    public boolean corresponde(Long otroPlanId, String otroNumero) {
+        return planId.equals(otroPlanId) && numeroAfiliacion.equals(otroNumero);
+    }
+
     private static void requerirNoNulo(Object valor, String campo) {
         if (valor == null) {
             throw new IllegalArgumentException("El campo '" + campo + "' no puede ser nulo");

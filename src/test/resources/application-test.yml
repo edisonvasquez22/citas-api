@@ -22,3 +22,5 @@ app:
     refresh-days: 7
   cors:
     allowed-origin: http://localhost:5173
+  integration:
+    api-key: test-integration-key

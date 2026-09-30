@@ -8,5 +8,7 @@ public interface AfiliacionRepositoryPort {
 
     Optional<Afiliacion> buscarVigentePorUsuario(Long usuarioId);
 
+    Optional<Afiliacion> buscarPorUsuarioPlanYNumero(Long usuarioId, Long planId, String numeroAfiliacion);
+
     Afiliacion guardar(Afiliacion afiliacion);
 }

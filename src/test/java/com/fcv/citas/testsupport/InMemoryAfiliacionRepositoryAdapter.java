@@ -21,7 +21,21 @@ public class InMemoryAfiliacionRepositoryAdapter implements AfiliacionRepository
     }
 
     @Override
+    public Optional<Afiliacion> buscarPorUsuarioPlanYNumero(Long usuarioId, Long planId, String numeroAfiliacion) {
+        return porId.values().stream()
+            .filter(a -> a.getUsuarioId().equals(usuarioId) && a.corresponde(planId, numeroAfiliacion))
+            .findFirst();
+    }
+
+    /** Replica uq_user_membership (user_id, plan_id, membership_number) de V1 para que los tests lo detecten. */
+    @Override
     public synchronized Afiliacion guardar(Afiliacion afiliacion) {
+        boolean duplicada = porId.values().stream().anyMatch(a -> !a.getId().equals(afiliacion.getId())
+            && a.getUsuarioId().equals(afiliacion.getUsuarioId())
+            && a.corresponde(afiliacion.getPlanId(), afiliacion.getNumeroAfiliacion()));
+        if (duplicada) {
+            throw new IllegalStateException("Duplicate entry for uq_user_membership");
+        }
         Afiliacion aGuardar = afiliacion;
         if (aGuardar.getId() == null) {
             Long nuevoId = secuenciaId.incrementAndGet();

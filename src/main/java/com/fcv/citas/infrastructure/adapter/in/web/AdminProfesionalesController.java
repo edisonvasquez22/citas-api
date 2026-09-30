@@ -1,5 +1,6 @@
 package com.fcv.citas.infrastructure.adapter.in.web;
 
+import com.fcv.citas.application.port.in.ActualizarAsignacionesProfesionalUseCase;
 import com.fcv.citas.application.port.in.CambiarEstadoProfesionalUseCase;
 import com.fcv.citas.application.port.in.ListarProfesionalesAdminUseCase;
 import com.fcv.citas.application.port.in.RegistrarProfesionalUseCase;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -25,13 +27,16 @@ public class AdminProfesionalesController {
     private final RegistrarProfesionalUseCase registrarProfesionalUseCase;
     private final CambiarEstadoProfesionalUseCase cambiarEstadoProfesionalUseCase;
     private final ListarProfesionalesAdminUseCase listarProfesionalesAdminUseCase;
+    private final ActualizarAsignacionesProfesionalUseCase actualizarAsignacionesUseCase;
 
     public AdminProfesionalesController(RegistrarProfesionalUseCase registrarProfesionalUseCase,
                                          CambiarEstadoProfesionalUseCase cambiarEstadoProfesionalUseCase,
-                                         ListarProfesionalesAdminUseCase listarProfesionalesAdminUseCase) {
+                                         ListarProfesionalesAdminUseCase listarProfesionalesAdminUseCase,
+                                         ActualizarAsignacionesProfesionalUseCase actualizarAsignacionesUseCase) {
         this.registrarProfesionalUseCase = registrarProfesionalUseCase;
         this.cambiarEstadoProfesionalUseCase = cambiarEstadoProfesionalUseCase;
         this.listarProfesionalesAdminUseCase = listarProfesionalesAdminUseCase;
+        this.actualizarAsignacionesUseCase = actualizarAsignacionesUseCase;
     }
 
     @GetMapping
@@ -60,6 +65,21 @@ public class AdminProfesionalesController {
 
         return new ProfesionalDtos.Response(resultado.profesionalId(), resultado.usuarioId(),
             resultado.codigoProfesional(), resultado.activo());
+    }
+
+    @PutMapping("/{id}/assignments")
+    public ProfesionalDtos.AsignacionesResponse actualizarAsignaciones(
+        @PathVariable Long id, @Valid @RequestBody ProfesionalDtos.ActualizarAsignacionesRequest request) {
+        ActualizarAsignacionesProfesionalUseCase.Resultado resultado = actualizarAsignacionesUseCase.actualizar(id,
+            request.especialidades().stream()
+                .map(e -> new RegistrarProfesionalUseCase.EspecialidadAsignadaCommand(e.especialidadId(), e.primaria()))
+                .toList(),
+            request.sedeIds());
+        return new ProfesionalDtos.AsignacionesResponse(resultado.profesionalId(),
+            resultado.especialidades().stream()
+                .map(e -> new ProfesionalDtos.EspecialidadAsignadaResponse(e.especialidadId(), e.primaria()))
+                .collect(Collectors.toSet()),
+            resultado.sedeIds());
     }
 
     @PatchMapping("/{id}/status")

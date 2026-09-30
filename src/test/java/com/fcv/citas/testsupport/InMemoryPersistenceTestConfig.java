@@ -3,6 +3,7 @@ package com.fcv.citas.testsupport;
 import com.fcv.citas.application.port.out.AfiliacionRepositoryPort;
 import com.fcv.citas.application.port.out.BloqueDisponibilidadRepositoryPort;
 import com.fcv.citas.application.port.out.CitaRepositoryPort;
+import com.fcv.citas.application.port.out.ConsultaCitasIntegracionPort;
 import com.fcv.citas.application.port.out.EpsRepositoryPort;
 import com.fcv.citas.application.port.out.EspecialidadRepositoryPort;
 import com.fcv.citas.application.port.out.HistorialEstadoCitaPort;
@@ -99,5 +100,10 @@ public class InMemoryPersistenceTestConfig {
     @Bean
     public PasswordResetTokenRepositoryPort passwordResetTokenRepositoryPort() {
         return new InMemoryPasswordResetTokenRepositoryAdapter();
+    }
+
+    @Bean
+    public ConsultaCitasIntegracionPort consultaCitasIntegracionPort() {
+        return new InMemoryConsultaCitasIntegracionAdapter();
     }
 }

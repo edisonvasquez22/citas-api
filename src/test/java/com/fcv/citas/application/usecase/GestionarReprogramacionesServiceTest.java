@@ -61,7 +61,8 @@ class GestionarReprogramacionesServiceTest {
         solicitudRepository = new InMemorySolicitudReprogramacionRepositoryAdapter();
         solicitarService = new SolicitarReprogramacionService(citaRepository, profesionalRepository, slotRepository,
             solicitudRepository);
-        gestionarService = new GestionarReprogramacionesService(solicitudRepository, citaRepository, slotRepository);
+        gestionarService = new GestionarReprogramacionesService(solicitudRepository, citaRepository, slotRepository,
+            evento -> { });
 
         inicioOriginal = LocalDateTime.of(fechaOriginal, horaOriginal);
         citaOriginal = citaRepository.guardar(Cita.solicitarGeneral(PACIENTE, profesionalId, SEDE, 1L, null,

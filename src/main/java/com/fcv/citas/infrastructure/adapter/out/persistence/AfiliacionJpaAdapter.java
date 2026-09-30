@@ -24,6 +24,12 @@ public class AfiliacionJpaAdapter implements AfiliacionRepositoryPort {
     }
 
     @Override
+    public Optional<Afiliacion> buscarPorUsuarioPlanYNumero(Long usuarioId, Long planId, String numeroAfiliacion) {
+        return afiliacionJpaRepository.findByUserIdAndPlanIdAndMembershipNumber(usuarioId, planId, numeroAfiliacion)
+            .map(this::aDominio);
+    }
+
+    @Override
     @Transactional
     public Afiliacion guardar(Afiliacion afiliacion) {
         AfiliacionJpaEntity entidad = new AfiliacionJpaEntity(afiliacion.getId(), afiliacion.getUsuarioId(),

@@ -3,10 +3,13 @@ package com.fcv.citas.application.usecase;
 import com.fcv.citas.application.port.in.GestionarSolicitudesEspecializadasUseCase;
 import com.fcv.citas.application.port.out.CitaRepositoryPort;
 import com.fcv.citas.application.port.out.HistorialEstadoCitaPort;
+import com.fcv.citas.application.port.out.NotificadorCambioEstadoPort;
 import com.fcv.citas.application.port.out.SlotRepositoryPort;
 import com.fcv.citas.domain.exception.RecursoNoEncontradoException;
 import com.fcv.citas.domain.model.Cita;
 import com.fcv.citas.domain.model.EstadoCita;
+import com.fcv.citas.domain.model.EventoCambioEstado;
+import com.fcv.citas.domain.model.TipoEventoCita;
 import com.fcv.citas.domain.model.FuenteCambioEstado;
 import com.fcv.citas.domain.model.TransicionEstadoCita;
 import java.time.LocalDate;
@@ -21,13 +24,16 @@ public class GestionarSolicitudesEspecializadasService implements GestionarSolic
     private final CitaRepositoryPort citaRepository;
     private final SlotRepositoryPort slotRepository;
     private final HistorialEstadoCitaPort historialPort;
+    private final NotificadorCambioEstadoPort notificador;
 
     public GestionarSolicitudesEspecializadasService(CitaRepositoryPort citaRepository,
                                                        SlotRepositoryPort slotRepository,
-                                                       HistorialEstadoCitaPort historialPort) {
+                                                       HistorialEstadoCitaPort historialPort,
+                                                       NotificadorCambioEstadoPort notificador) {
         this.citaRepository = citaRepository;
         this.slotRepository = slotRepository;
         this.historialPort = historialPort;
+        this.notificador = notificador;
     }
 
     @Override
@@ -45,6 +51,8 @@ public class GestionarSolicitudesEspecializadasService implements GestionarSolic
 
         historialPort.registrar(TransicionEstadoCita.nueva(guardada.getId(), EstadoCita.APPROVED, adminUsuarioId,
             FuenteCambioEstado.ADMIN, null, LocalDateTime.now()));
+        notificador.notificar(EventoCambioEstado.deCita(TipoEventoCita.ESPECIALIZADA_APROBADA, guardada.getId(),
+            null));
 
         return aResumen(guardada);
     }
@@ -61,6 +69,8 @@ public class GestionarSolicitudesEspecializadasService implements GestionarSolic
 
         historialPort.registrar(TransicionEstadoCita.nueva(guardada.getId(), EstadoCita.REJECTED, adminUsuarioId,
             FuenteCambioEstado.ADMIN, motivo, LocalDateTime.now()));
+        notificador.notificar(EventoCambioEstado.deCita(TipoEventoCita.ESPECIALIZADA_RECHAZADA, guardada.getId(),
+            motivo));
 
         // El motivo del rechazo se audita en el historial (appointment_status_history.reason,
         // ver HU-023); `appointments` no tiene columna propia para él (ver database/reference/db.sql),

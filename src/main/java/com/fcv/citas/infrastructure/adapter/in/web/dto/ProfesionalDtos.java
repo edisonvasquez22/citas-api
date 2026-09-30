@@ -32,6 +32,14 @@ public final class ProfesionalDtos {
 
     public record CambiarEstadoRequest(@NotNull Boolean activo) {}
 
+    public record ActualizarAsignacionesRequest(
+        @NotEmpty List<@Valid EspecialidadAsignadaRequest> especialidades,
+        @NotEmpty Set<Long> sedeIds
+    ) {}
+
+    public record AsignacionesResponse(Long profesionalId, Set<EspecialidadAsignadaResponse> especialidades,
+                                       Set<Long> sedeIds) {}
+
     public record Response(Long profesionalId, Long usuarioId, String codigoProfesional, boolean activo) {}
 
     public record EspecialidadAsignadaResponse(Long especialidadId, boolean primaria) {}

@@ -86,4 +86,29 @@ class GestionarAfiliacionServiceTest {
         assertThat(vigente.numeroAfiliacion()).isEqualTo("AFIL-002");
         assertThat(vigente.planId()).isEqualTo(planDeAId2);
     }
+
+    @Test
+    void asociar_mismaAfiliacionVigente_esIdempotente() {
+        var primera = service.asociar("1", new GestionarAfiliacionUseCase.AsociarCommand(epsAId, planDeAId, "AFIL-001"));
+
+        var segunda = service.asociar("1", new GestionarAfiliacionUseCase.AsociarCommand(epsAId, planDeAId, "AFIL-001"));
+
+        assertThat(segunda.afiliacionId()).isEqualTo(primera.afiliacionId());
+        assertThat(service.consultarVigente("1")).isPresent();
+    }
+
+    @Test
+    void asociar_volverAUnaAfiliacionHistorica_laReactivaSinDuplicar() {
+        var original = service.asociar("1",
+            new GestionarAfiliacionUseCase.AsociarCommand(epsAId, planDeAId, "AFIL-001"));
+        Long planDeAId2 = planService.crear(epsAId,
+            new AdministrarPlanesEpsUseCase.CrearCommand(2L, "A-PLAN-2", "Plan A2")).id();
+        service.asociar("1", new GestionarAfiliacionUseCase.AsociarCommand(epsAId, planDeAId2, "AFIL-002"));
+
+        var reactivada = service.asociar("1",
+            new GestionarAfiliacionUseCase.AsociarCommand(epsAId, planDeAId, "AFIL-001"));
+
+        assertThat(reactivada.afiliacionId()).isEqualTo(original.afiliacionId());
+        assertThat(service.consultarVigente("1").orElseThrow().numeroAfiliacion()).isEqualTo("AFIL-001");
+    }
 }

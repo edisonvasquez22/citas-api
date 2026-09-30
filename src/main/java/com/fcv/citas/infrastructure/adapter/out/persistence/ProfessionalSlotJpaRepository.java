@@ -19,11 +19,13 @@ public interface ProfessionalSlotJpaRepository extends JpaRepository<Professiona
     boolean existsByAvailabilityBlockIdAndAppointmentIdIsNotNull(Long availabilityBlockId);
 
     /** HU-013: slots libres para un conjunto de profesionales candidatos, opcionalmente filtrados por sede. */
-    @Query("SELECT s FROM ProfessionalSlotJpaEntity s WHERE s.appointmentId IS NULL "
-        + "AND s.availabilityBlock.availableDate = :fecha "
-        + "AND s.availabilityBlock.professionalId IN :profesionalIds "
-        + "AND (:sedeId IS NULL OR s.availabilityBlock.locationId = :sedeId) "
-        + "ORDER BY s.availabilityBlock.professionalId, s.startAt")
+    // JOIN FETCH: SlotJpaAdapter mapea el bloque fuera de la transacción; sin él, el proxy LAZY lanza
+    // LazyInitializationException (open-in-view está desactivado).
+    @Query("SELECT s FROM ProfessionalSlotJpaEntity s JOIN FETCH s.availabilityBlock b WHERE s.appointmentId IS NULL "
+        + "AND b.availableDate = :fecha "
+        + "AND b.professionalId IN :profesionalIds "
+        + "AND (:sedeId IS NULL OR b.locationId = :sedeId) "
+        + "ORDER BY b.professionalId, s.startAt")
     List<ProfessionalSlotJpaEntity> buscarLibres(@Param("profesionalIds") Set<Long> profesionalIds,
                                                   @Param("sedeId") Long sedeId, @Param("fecha") LocalDate fecha);
 

@@ -33,11 +33,14 @@ public class SecurityConfig {
 
     private final TokenProviderPort tokenProvider;
     private final String allowedOrigin;
+    private final String integrationApiKey;
 
     public SecurityConfig(TokenProviderPort tokenProvider,
-                           @Value("${app.cors.allowed-origin}") String allowedOrigin) {
+                           @Value("${app.cors.allowed-origin}") String allowedOrigin,
+                           @Value("${app.integration.api-key:}") String integrationApiKey) {
         this.tokenProvider = tokenProvider;
         this.allowedOrigin = allowedOrigin;
+        this.integrationApiKey = integrationApiKey;
     }
 
     @Bean
@@ -53,6 +56,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/auth/**",
+                    // Sin esto el forward interno a /error de un 403 exige autenticación y el cliente recibe 401.
+                    "/error",
                     "/actuator/health",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
@@ -62,9 +67,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // HU-012: cada PROFESSIONAL gestiona únicamente sus propios bloques de disponibilidad.
                 .requestMatchers("/api/professionals/me/**").hasRole("PROFESSIONAL")
+                .requestMatchers("/api/integration/**").hasRole("INTEGRATION")
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(new JwtAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new JwtAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(new IntegrationApiKeyFilter(integrationApiKey), JwtAuthenticationFilter.class);
 
         return http.build();
     }
