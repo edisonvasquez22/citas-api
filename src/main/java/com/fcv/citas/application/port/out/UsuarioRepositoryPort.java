@@ -1,5 +1,6 @@
 package com.fcv.citas.application.port.out;
 
+import com.fcv.citas.domain.model.RolNombre;
 import com.fcv.citas.domain.model.Usuario;
 import java.util.Optional;
 
@@ -19,4 +20,6 @@ public interface UsuarioRepositoryPort {
     Optional<Usuario> buscarPorEmail(String email);
 
     Optional<Usuario> buscarPorId(String id);
+
+    boolean existeConRol(RolNombre rol);
 }

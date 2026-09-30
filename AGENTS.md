@@ -1,20 +1,28 @@
 # AGENTS.md — `citas-api`
 
-> Generado a partir de `../prompts/agents/PROMPT_AGENT_CITAS_API.md` una vez inicializado el proyecto Spring Boot real (2026-09-17). Reemplaza a `AGENTS.md.template`. Actualizado tras el incremento S3 (2026-09-25).
+> Generado a partir de `../prompts/agents/PROMPT_AGENT_CITAS_API.md` una vez inicializado el proyecto Spring Boot real (2026-09-17). Reemplaza a `AGENTS.md.template`. Actualizado tras el incremento S3 (2026-09-25) y el cierre de brechas del 2026-09-30.
 
 ## Responsabilidad de este repo
 
 - Java 21, Spring Boot 3.5.16, Maven.
 - Arquitectura hexagonal (`domain` / `application` / `infrastructure`).
 - REST/JSON.
-- Spring Security + JWT access/refresh (implementado en HU-002 con rotación de refresh token); autorización por rol (`hasRole`) para `/api/admin/**` (ADMIN) y `/api/professionals/me/**` (PROFESSIONAL), agregada en S3.
-- MySQL 8.4 + Spring Data JPA + Flyway, con esquema real (`V1__esquema_inicial.sql`, `V2__seed_catalogos_fijos.sql`; ver `docs/db-design/MODELO_3FN.md`).
+- Spring Security + JWT access/refresh (implementado en HU-002 con rotación de refresh token); autorización por rol (`hasRole`) para `/api/admin/**` (ADMIN) y `/api/professionals/me/**` (PROFESSIONAL), agregada en S3; `/api/integration/**` (ROLE_INTEGRATION, solo por API key `X-Integration-Key`, para n8n).
+- MySQL 8.4 + Spring Data JPA + Flyway, con esquema real (`V1__esquema_inicial.sql`, `V2__seed_catalogos_fijos.sql`, `V3__seed_catalogo_eps.sql`, `V4__especialidad_primaria_unica.sql`; ver `docs/db-design/MODELO_3FN.md`).
 - Reglas de negocio del PRD, HU por HU.
 - Pruebas de dominio, aplicación e integración.
 
-**Estado verificado (2026-09-30):** `mvn test` da `BUILD SUCCESS` con **133/133 pruebas** (dominio, casos de uso con dobles en memoria, integración MockMvc incluyendo autorización por rol). Incluye pruebas de concurrencia real para la retención atómica anti doble-reserva (HU-014/HU-015, RN-01) y para el bloqueo anti doble-PENDING de reprogramación (HU-019 CA-04, LOOP_03). Sigue sin verificarse contra MySQL real (Docker instalado, arranque todavía sin confirmar) — todo corre con los dobles en memoria de `src/test/java/.../testsupport/`.
+**Estado verificado (2026-09-30, tarde):** `mvn test` da `BUILD SUCCESS` con **159/159 pruebas**. Además, **verificado contra MySQL 8.4 real en Docker** (`docker compose up`, Flyway V1→V4 aplicadas) con un recorrido Playwright de 16 flujos sobre los 3 roles. Esa verificación real encontró 3 bugs que los dobles en memoria no podían detectar (ver entrada 2026-09-30 tarde): **no basta con `mvn test`** para cambios de persistencia o de fechas; levantar el stack y probar el endpoint.
 
-**Historial:** 2026-09-21 (15/15, HU-001/HU-002, GOAL_01 PASS) → 2026-09-23 (15/15, tras adoptar el esquema exacto de `database/reference/db.sql`) → 2026-09-25 (76/76, S3 completo: HU-009/010/011/012/013/014/015/016/023) → 2026-09-28 (82/82, ver nota HU-011 abajo) → 2026-09-29 (106/106, S4 backend completo: HU-017/018/019/020/021/022, ver nota abajo) → 2026-09-29 (109/109, LOOP_02 agregó `reprogramacion` a `MiCitaResponse`, ver nota abajo) → 2026-09-29 (111/111, LOOP_03 agregó CA-04 de HU-019, ver nota abajo) → 2026-09-30 (133/133, HU-003/004/005/007/008: recuperar contraseña, perfil, afiliación EPS/plan, catálogo EPS/planes — ver nota abajo).
+**Historial:** 2026-09-21 (15/15, HU-001/HU-002, GOAL_01 PASS) → 2026-09-23 (15/15, tras adoptar el esquema exacto de `database/reference/db.sql`) → 2026-09-25 (76/76, S3 completo: HU-009/010/011/012/013/014/015/016/023) → 2026-09-28 (82/82, ver nota HU-011 abajo) → 2026-09-29 (106/106, S4 backend completo: HU-017/018/019/020/021/022, ver nota abajo) → 2026-09-29 (109/109, LOOP_02 agregó `reprogramacion` a `MiCitaResponse`, ver nota abajo) → 2026-09-29 (111/111, LOOP_03 agregó CA-04 de HU-019, ver nota abajo) → 2026-09-30 (133/133, HU-003/004/005/007/008: recuperar contraseña, perfil, afiliación EPS/plan, catálogo EPS/planes — ver nota abajo) → 2026-09-30 tarde (159/159: integración n8n, historial HU-023, reasignación de profesionales, ADMIN inicial, V4 y 4 correcciones verificadas contra MySQL real — ver nota abajo).
+
+**2026-09-30 (tarde) — Integración n8n, historial, reasignación, ADMIN inicial y bugs encontrados contra MySQL real.**
+- **n8n (S5/S6):** `IntegrationController` (`GET /api/integration/appointments/reminders?desde&hasta` para WF-001 y `.../daily-summary?fecha` para WF-003), protegido por `IntegrationApiKeyFilter` (cabecera `X-Integration-Key` = `N8N_API_KEY`, comparación en tiempo constante, rol `INTEGRATION` que no abre `/api/admin/**`). Lectura vía `ConsultaCitasIntegracionJdbcAdapter` (JOIN de citas con paciente/profesional/sede/especialidad). WF-002: `NotificadorCambioEstadoPort` invocado por `CancelarCitaService`, `GestionarSolicitudesEspecializadasService` y `GestionarReprogramacionesService`; `N8nWebhookNotificadorAdapter` hace `POST` a `N8N_WEBHOOK_URL` **después del commit** (cabecera `X-Webhook-Secret`), sin propagar fallos al caso de uso.
+- **HU-023 CA-03:** `GET /api/appointments/{id}/history` (`ConsultarHistorialCitaService`): ADMIN ve todo, USER solo sus citas, PROFESSIONAL solo las de su agenda; fuera de ownership → 404.
+- **RF-07:** `PUT /api/admin/professionals/{id}/assignments` (`ActualizarAsignacionesProfesionalService`): mismas invariantes que el registro (`Profesional.reasignar`), y no deja retirar una sede con bloques futuros ni una especialidad con citas futuras REQUESTED/APPROVED.
+- **ADMIN inicial:** `AdminBootstrapRunner` + `CrearAdministradorInicialService` crean un ADMIN al arrancar si no existe ninguno y están definidas `ADMIN_BOOTSTRAP_EMAIL`/`ADMIN_BOOTSTRAP_PASSWORD` (mín. 12 caracteres). Nunca sobrescribe ni convierte una cuenta existente. Alternativa para demo: `scripts/seed-demo.ps1` (raíz del workspace) carga los usuarios de `database/reference/db.sql`.
+- **V4:** `primary_flag` generada + `UNIQUE (professional_id, primary_flag)`: la BD ya impide dos especialidades primarias.
+- **Bugs corregidos que solo aparecían contra MySQL real:** (1) `GET /api/availability` lanzaba `LazyInitializationException` (500) → `JOIN FETCH` en `ProfessionalSlotJpaRepository.buscarLibres`; agendar y reprogramar no funcionaban. (2) Todas las fechas salían corridas +5 h: el JVM del contenedor corría en UTC con `serverTimezone=America/Bogota` → `TZ: America/Bogota` en `docker-compose.yml` (fuera de este repo). (3) Re-asociar una afiliación ya usada violaba `uq_user_membership` y dejaba al usuario **sin afiliación vigente** → `asociar` transaccional + reutiliza el registro histórico (el doble en memoria ahora replica la restricción única). (4) Un rol incorrecto recibía 401 en vez de 403 (el forward a `/error` exigía autenticación) → `/error` en `permitAll`.
 
 **2026-09-30 — Backend completo de HU-003 (recuperar contraseña), HU-004 (perfil), HU-005 (afiliación EPS/plan), HU-007 (catálogo EPS) y HU-008 (catálogo planes EPS).** El usuario detectó que `GUIA_SESIONES_S2_S6.md` las listaba como parte de S4 pero habían quedado fuera de la aprobación real de S4 (2026-09-28) — pidió implementarlas todas. Implementación:
 - **HU-007/HU-008** (`Eps`/`PlanEps`, `/api/admin/eps`, `/api/admin/eps/{epsId}/plans`, + lectura pública `/api/eps`, `/api/eps/{epsId}/plans`): mismo patrón exacto que `Especialidad`/HU-009 (crear/editar/cambiarEstado, sin `DELETE` — el borrado físico queda estructuralmente imposible). Sin migración nueva: `eps`/`eps_plans` ya existían en `V1`; `V3__seed_catalogo_eps.sql` agrega el seed demo que nunca se había sembrado.
@@ -47,7 +55,8 @@
 - `infrastructure/adapter/out/**` son los únicos lugares con dependencias de Spring Security/JWT/persistencia.
 - No acoplar este backend a React/Angular. No editar `citas-web` desde este agente.
 - Cambios de esquema requieren migración Flyway y justificación en la HU correspondiente.
-- Secretos solo por variables de entorno (`JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `DB_*`); nunca hardcodeados ni logueados.
+- Secretos solo por variables de entorno (`JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `DB_*`, `N8N_API_KEY`, `N8N_WEBHOOK_SECRET`, `ADMIN_BOOTSTRAP_PASSWORD`); nunca hardcodeados ni logueados.
+- La capa de aplicación usa `@Service`/`@Transactional` a propósito (decisión documentada en `docs/wiki/llm-wiki/wiki/decisiones.md`, 2026-09-30); `domain/` y `application/port/` no pueden importar Spring ni JPA.
 
 ## Diseño de datos
 
@@ -71,6 +80,7 @@ Los adaptadores JPA (`UsuarioJpaAdapter`, `RefreshTokenJpaAdapter`, en `infrastr
 4. Implementa el mínimo coherente con la arquitectura hexagonal.
 5. Ejecuta `mvn test` (dominio + aplicación + integración MockMvc; ver `src/test/resources/application-test.yml` para el perfil sin base de datos real).
 6. Verifica arquitectura y DoD; actualiza la matriz de evidencia de la HU.
-7. Resume evidencia y deja explícito lo no verificado (p. ej., nada que dependa de MySQL real corriendo).
+7. Si el cambio toca persistencia, fechas o seguridad HTTP, levanta el stack (`docker compose up -d` + `mvn spring-boot:run` en `citas-api-dev`) y prueba el endpoint real: los dobles en memoria no detectan errores de JPA ni de zona horaria.
+8. Resume evidencia y deja explícito lo no verificado.
 
 No mantengas una LLM Wiki propia: la wiki global la mantiene el agente orquestador en `docs/wiki/llm-wiki/` (raíz del workspace, `AGENTS.md`).

@@ -5,7 +5,7 @@ actualizado: 2026-09-30
 
 # Contratos REST — `citas-api` ↔ `citas-web`
 
-Se actualiza junto con cada HU que agrega/cambia un endpoint (HU-024). Estado tras HU-003/004/005/007/008 (backend).
+Se actualiza junto con cada HU que agrega/cambia un endpoint (HU-024). Estado tras HU-003/004/005/007/008 y el cierre de brechas del 2026-09-30 (historial, reasignación, integración n8n).
 
 ## Convenciones fijadas
 
@@ -16,7 +16,8 @@ Se actualiza junto con cada HU que agrega/cambia un endpoint (HU-024). Estado tr
 - Recurso inexistente (especialidad/profesional/bloque/cita): `404`.
 - Conflicto de estado (horario perdido por concurrencia RN-01, transición de cita inválida): `409`.
 - Errores de validación de entrada: `400`, con `ApiError.detalles` listando `campo: mensaje`.
-- Todos los endpoints de `/api/auth/**` son públicos (`permitAll`); `/api/admin/**` exige rol `ADMIN`; `/api/professionals/me/**` exige rol `PROFESSIONAL`; el resto de la API autenticada acepta cualquier rol (`Authorization: Bearer <accessToken>`).
+- Todos los endpoints de `/api/auth/**` son públicos (`permitAll`); `/api/admin/**` exige rol `ADMIN`; `/api/professionals/me/**` exige rol `PROFESSIONAL`; `/api/integration/**` solo acepta la API key de n8n (cabecera `X-Integration-Key`, no JWT); el resto de la API autenticada acepta cualquier rol (`Authorization: Bearer <accessToken>`).
+- **2026-09-30:** el `403` por rol incorrecto ahora llega así también en el servidor real. Antes el `403` se reenviaba internamente a `/error`, que exigía autenticación, y el cliente recibía `401` (las pruebas MockMvc no lo detectaban porque no hacen ese reenvío). Se corrigió agregando `/error` a `permitAll`.
 
 ## Endpoints implementados (HU-001, HU-002)
 
@@ -114,10 +115,22 @@ Notas de diseño:
   PARTICULAR=5) que ninguna HU pidió exponer por su cuenta — el ADMIN los usa como constantes conocidas al crear
   un plan, y `AfiliacionResponse`/`PlanEpsDtos.Response` solo devuelven el id, no el nombre.
 
+## Endpoints implementados (cierre de brechas — 2026-09-30)
+
+| Método | Ruta | Rol | Request | Response |
+|---|---|---|---|---|
+| GET | `/api/appointments/{id}/history` | cualquiera autenticado, con ownership | — | `[{estado, fuente: SYSTEM\|USER\|ADMIN, actorUsuarioId, motivo, momento}]` |
+| PUT | `/api/admin/professionals/{id}/assignments` | ADMIN | `{especialidades: [{especialidadId, primaria}], sedeIds: []}` | `{profesionalId, especialidades, sedeIds}` |
+| GET | `/api/integration/appointments/reminders?desde&hasta` | API key n8n | `desde`/`hasta` ISO `LocalDateTime`, ventana ≤ 7 días | `[CitaNotificable]` (solo `APPROVED`) |
+| GET | `/api/integration/appointments/daily-summary?fecha` | API key n8n | `fecha` ISO `LocalDate` | `{fecha, total, porEstado, porSede, porEspecialidad, citas: [CitaNotificable]}` |
+
+- `CitaNotificable`: `{citaId, estado, inicio, fin, pacienteUsuarioId, pacienteNombre, pacienteEmail, profesionalNombre, sedeCodigo, sedeNombre, especialidadNombre}`.
+- **Historial (HU-023 CA-03):** ADMIN ve cualquier cita; USER solo las propias; PROFESSIONAL solo las de su agenda. Fuera de ownership → `404`, igual que el resto de recursos propios. Sin endpoints de edición/borrado (RN-12).
+- **Reasignación (RF-07):** exige exactamente una especialidad primaria y al menos una sede activa. Responde `400` si se intenta retirar una sede con bloques de disponibilidad futuros o una especialidad con citas futuras `REQUESTED`/`APPROVED`. No cambia estado, código ni matrícula.
+- **Webhook saliente WF-002** (citas-api → n8n): `POST {N8N_WEBHOOK_URL}` con cabecera `X-Webhook-Secret`, enviado **después del commit**. Body: `{tipo, citaId, solicitudReprogramacionId, motivo, momento, estadoCita, inicio, fin, pacienteNombre, pacienteEmail, profesionalNombre, sedeCodigo, sedeNombre, especialidadNombre}`. Valores de `tipo`: `ESPECIALIZADA_APROBADA`, `ESPECIALIZADA_RECHAZADA`, `CITA_CANCELADA`, `REPROGRAMACION_APROBADA` y `REPROGRAMACION_RECHAZADA`. Si falla, solo se registra en el log; la operación del usuario no se revierte.
+
 ## Pendiente
 
-- UI en `citas-web` para HU-003/004/005/007/008 y para HU-017 a HU-022 (backend implementado, frontend
-  pendiente — mismo patrón de siempre: diseño visual reservado al usuario vía Stitch/AI Studio).
 - Publicar el JSON/YAML de OpenAPI exportado como artefacto versionado (opcional; hoy se sirve dinámico vía springdoc).
 
 ## Relacionado

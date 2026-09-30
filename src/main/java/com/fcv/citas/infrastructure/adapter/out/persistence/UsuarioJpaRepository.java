@@ -10,4 +10,6 @@ public interface UsuarioJpaRepository extends JpaRepository<UsuarioJpaEntity, Lo
     boolean existsByDocumentNumber(String documentNumber);
 
     Optional<UsuarioJpaEntity> findByEmail(String email);
+
+    boolean existsByRoles_Code(String code);
 }

@@ -91,4 +91,9 @@ public class UsuarioJpaAdapter implements UsuarioRepositoryPort {
             roles, entidad.isActive()
         );
     }
+
+    @Override
+    public boolean existeConRol(RolNombre rol) {
+        return usuarioJpaRepository.existsByRoles_Code(rol.name());
+    }
 }

@@ -116,6 +116,12 @@ tablas necesarias (`password_reset_tokens`, `eps`, `eps_plans`, `user_insurance_
 sembrado. La UI correspondiente en `citas-web` no se implementó todavía: el diseño visual sigue reservado al
 usuario (Stitch/AI Studio) — ver `AGENTS.md` raíz regla 11.
 
+## Estado al 2026-09-30 (prevalece sobre las notas por incremento de arriba)
+
+- **UI completa:** las notas de arriba que dicen "la UI no se implementó todavía" quedaron superadas. `citas-web` tiene pantalla para todas las HU con backend, incluidas HU-003/004/005/007/008 y la consulta de historial de HU-023.
+- **Verificación real:** backend y frontend se probaron contra MySQL 8.4 real en Docker con recorridos Playwright de los 3 roles (ver `../llm-wiki/wiki/log.md`).
+- **Estados:** HU-001 a HU-023 siguen en `En desarrollo` y HU-024 en `Borrador`, igual que las épicas. Pasar a `Terminada` requiere que el usuario valide el DoD de cada HU; no se cambia en su nombre.
+
 ## Decisiones/incógnitas pendientes
 
 - Ver `../llm-wiki/wiki/decisiones.md` y `../llm-wiki/wiki/riesgos.md`.

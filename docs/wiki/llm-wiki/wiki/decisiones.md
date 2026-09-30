@@ -1,6 +1,6 @@
 ---
 tipo: wiki
-actualizado: 2026-09-17
+actualizado: 2026-09-30
 ---
 
 # Decisiones
@@ -137,6 +137,38 @@ Evidencia: `mvn test` corrido tras el cambio — ver `wiki/log.md` para el resul
 - Campos inventados descartados: el "código de cita" con formato bonito (`FCV-GEN-89421`) no existe en el contrato real — se usa el `citaId` numérico real; el campo `prep` (preparación previa) tampoco existe en `specialties` — se quitó en vez de inventarlo.
 
 **Evidencia:** `npm run lint`/`npm run build` en `EXIT 0`. **No verificado con navegador real (Playwright)** — esta sesión no tuvo esa herramienta disponible, y de todas formas el backend no puede correr en vivo sin MySQL real (los dobles en memoria de `testsupport/` solo existen dentro de `@SpringBootTest`, no en un servidor real) — mismo bloqueo de Docker de siempre. La cobertura HTTP real más cercana disponible es `S3AuthorizationIntegrationTest`/`AuthFlowIntegrationTest` (MockMvc), que sí ejercitan la capa REST completa.
+
+## 2026-09-30 — Anotaciones de Spring en la capa de aplicación (hexagonal pragmática)
+
+**DECISIÓN técnica, documentada para la sustentación.** `RESTRICCIONES_TECNICAS.md` pide arquitectura hexagonal. El **dominio** (`domain/`) cumple estrictamente: no importa `org.springframework.*` ni `jakarta.persistence.*`. La **capa de aplicación** (`application/usecase/*Service`) sí usa dos anotaciones de Spring: `@Service` (registro del bean) y `@Transactional` (límite transaccional del caso de uso).
+
+**Motivo para mantenerlo así:**
+- Son anotaciones declarativas: los servicios no llaman APIs de Spring, no reciben tipos de Spring ni conocen JPA/HTTP. Toda la I/O sigue pasando por puertos (`application/port/out`), y los tests unitarios instancian los servicios con `new` y dobles en memoria, sin contexto de Spring.
+- El límite transaccional pertenece al caso de uso (p. ej. cerrar la afiliación anterior y crear la nueva debe ser atómico — ver el bug corregido hoy en `GestionarAfiliacionService`). Moverlo a los adaptadores rompería esa atomicidad; moverlo a una configuración manual de beans + `TransactionTemplate` en ~30 servicios agrega código sin cambiar el comportamiento.
+
+**Alternativa descartada (por ahora):** quitar las anotaciones y declarar los servicios en una clase `@Configuration` de infraestructura, con transacciones vía decoradores. Se retoma solo si el trainer exige hexagonal estricta también en `application/`.
+
+**Regla que sí se mantiene:** ninguna clase de `domain/` ni de `application/port/` puede importar Spring o JPA.
+
+## 2026-09-30 — Unicidad de especialidad primaria en la BD (V4)
+
+**HECHO.** `V4__especialidad_primaria_unica.sql` agrega `primary_flag` (columna generada `IF(is_primary, 1, NULL)`) y `UNIQUE (professional_id, primary_flag)`. MySQL no tiene índices únicos parciales; como `UNIQUE` admite varios `NULL`, solo puede haber una fila primaria por profesional. Verificado contra MySQL real: un segundo `is_primary = TRUE` falla con `1062`, y la reasignación vía `PUT /api/admin/professionals/{id}/assignments` (que reemplaza la colección completa) sigue funcionando. Cierra el riesgo anotado en `riesgos.md`.
+
+## 2026-09-30 — ADMIN inicial por variables de entorno
+
+**DECISIÓN técnica.** El autorregistro siempre crea USER y no había forma de tener un ADMIN salvo cargando `database/reference/db.sql` a mano. Se agregaron dos vías:
+- `ADMIN_BOOTSTRAP_EMAIL` / `ADMIN_BOOTSTRAP_PASSWORD`: al arrancar, si **no existe ningún ADMIN**, `AdminBootstrapRunner` lo crea (contraseña de mínimo 12 caracteres). Nunca sobrescribe ni asciende una cuenta existente (si el email ya está en uso, lo registra en el log y no hace nada).
+- `scripts/seed-demo.ps1` (raíz): carga la sección 7 de `db.sql` con `utf8mb4` (ADMIN demo, profesionales, pacientes, disponibilidad, citas).
+
+**Motivo:** sin credenciales en código ni en migraciones (las migraciones Flyway también corren en entornos no demo). **Límite conocido:** el seed usa `id = 1` para su ADMIN, así que debe cargarse sobre una base limpia, antes del bootstrap; el script lo verifica y se detiene si `id = 1` ya es otra cuenta.
+
+## 2026-09-30 — Internacionalización ES/EN sin librería
+
+**DECISIÓN técnica.** Módulo propio `citas-web/src/i18n`: `t('texto en español', vars?)`, donde la clave es el propio texto y `en.ts` guarda la traducción. El idioma se guarda en `localStorage`; `App` re-renderiza todo el árbol al cambiarlo, así que `t()` no necesita hook ni contexto.
+
+**Motivo:** con ~600 textos, usar el español como clave evita inventar claves, mantiene el código legible y permite que los mensajes del backend (en español) caigan en el mismo mecanismo con fallback. El envoltorio inicial lo hizo un codemod AST (Babel + recast), no reemplazos con regex. `en.test.ts` falla si algún `t('...')` literal no tiene traducción.
+
+**Cuándo cambiarlo:** si se necesitan plurales complejos, más idiomas o traducción por traductores externos, migrar a `i18next`/`react-intl`. Las claves actuales sirven como punto de partida.
 
 ## Pendiente de diseño reservado al usuario
 

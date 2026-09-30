@@ -59,4 +59,9 @@ public class InMemoryUsuarioRepositoryAdapter implements UsuarioRepositoryPort {
     public Optional<Usuario> buscarPorId(String id) {
         return Optional.ofNullable(porId.get(id));
     }
+
+    @Override
+    public boolean existeConRol(com.fcv.citas.domain.model.RolNombre rol) {
+        return porId.values().stream().anyMatch(u -> u.getRoles().contains(rol));
+    }
 }

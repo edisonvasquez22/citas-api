@@ -1,56 +1,62 @@
 # citas-api
 
-Backend del sistema ficticio de agendamiento de citas (laboratorio FCV). Java 21 + Spring Boot 3.5.16 + Maven, arquitectura hexagonal.
+Backend del sistema ficticio de agendamiento de citas (laboratorio FCV). Java 21 + Spring Boot 3.5.16 + Maven, arquitectura hexagonal, MySQL 8.4 + Flyway.
 
-## Estado actual (S2)
+## Qué cubre
 
-Implementado como primer incremento (HU-001, HU-002; ver `docs/wiki/scrum/`):
+Todas las HU de backend del PRD (RF-01 a RF-20). Detalle por HU en `docs/wiki/scrum/` y contratos en `docs/wiki/llm-wiki/wiki/contratos.md`.
 
-- Registro de usuario (`POST /api/auth/register`) con unicidad de email/documento y password hasheado (BCrypt).
-- Login (`POST /api/auth/login`) con emisión de access + refresh token (JWT, `io.jsonwebtoken:jjwt` 0.13.0).
-- Renovación de sesión (`POST /api/auth/refresh`) con rotación de refresh token.
-- Logout (`POST /api/auth/logout`) que revoca el refresh token de la sesión.
-- Spring Security stateless con filtro JWT propio (sin `AuthenticationManager`/`UserDetailsService`).
-- MySQL + Flyway con esquema real: `V1__esquema_inicial.sql` (modelo 3FN completo del PRD) + `V2__seed_catalogos_fijos.sql` (roles, sedes, regímenes, estados — RF-05/HU-006).
-- Persistencia real de usuarios/roles/refresh tokens vía JPA (`UsuarioJpaAdapter`, `RefreshTokenJpaAdapter`).
+| Área | Endpoints principales |
+|---|---|
+| Autenticación | `POST /api/auth/register`, `login`, `refresh`, `logout`, `password-reset/request`, `password-reset/confirm` |
+| Perfil y afiliación (USER) | `GET/PATCH /api/users/me`, `GET/PUT /api/users/me/afiliacion`, `GET /api/eps`, `GET /api/eps/{id}/plans` |
+| Citas (USER) | `GET /api/availability`, `POST /api/appointments/general\|specialized`, `GET /api/appointments/mine`, `POST /api/appointments/{id}/cancel\|reschedule`, `GET /api/appointments/{id}/history` |
+| Profesional | `GET/POST/PUT/DELETE /api/professionals/me/availability-blocks`, `GET /api/professionals/me/agenda`, `POST /api/appointments/{id}/complete\|no-show` |
+| ADMIN | `/api/admin/appointments/**`, `/api/admin/reschedules/**`, `/api/admin/specialties/**`, `/api/admin/professionals/**` (incl. `PUT /{id}/assignments`), `/api/admin/eps/**` |
+| n8n | `GET /api/integration/appointments/reminders`, `GET /api/integration/appointments/daily-summary` (cabecera `X-Integration-Key`) + webhook saliente a `N8N_WEBHOOK_URL` |
 
-### Diseño de datos
-
-El modelo relacional 3FN (todas las tablas del PRD, no solo autenticación) está en `docs/db-design/MODELO_3FN.md` (diagrama ER, dependencias funcionales, justificación 1FN→2FN→3FN) y `docs/db-design/COMPARACION_REFERENCIA.md` (comparación contra `database/reference/db.sql`). Diseñado por el agente por decisión explícita del usuario (2026-09-17): la única actividad reservada al usuario en este proyecto es el **prototipado visual** (Stitch/AI Studio).
-
-Solo hay `@Entity`/adaptador JPA para lo que HU-001/HU-002/HU-006 necesitan hoy (usuarios, roles, refresh tokens); el resto de las tablas (profesionales, agenda, citas, EPS...) existen en el esquema y se implementan a medida que sus HU se aprueben (S3/S4).
+Autorización: JWT con roles `USER`/`PROFESSIONAL`/`ADMIN` (401 sin token, 403 con rol incorrecto, 404 fuera de ownership). `/api/integration/**` solo acepta la API key de n8n.
 
 ## Arquitectura hexagonal
 
 ```text
 com.fcv.citas
-├── domain/            entidades e invariantes (sin Spring/JPA)
+├── domain/             entidades e invariantes (sin Spring/JPA)
 ├── application/        puertos (in/out) + casos de uso
 └── infrastructure/
-    ├── adapter/in/web/          controladores REST + DTOs
-    ├── adapter/out/security/    JWT (JjwtTokenProviderAdapter), BCrypt
-    ├── adapter/out/persistence/ JPA real: usuarios/roles/refresh tokens
-    └── config/                  Spring Security + filtro JWT
+    ├── adapter/in/web/            controladores REST + DTOs
+    ├── adapter/out/persistence/   JPA
+    ├── adapter/out/integration/   consultas JDBC y webhook para n8n
+    ├── adapter/out/security/      JWT, BCrypt
+    └── config/                    Spring Security, filtros JWT y API key, ADMIN inicial
 ```
 
 ## Cómo correr y probar
 
-Este repo asume Java 21 + Maven + MySQL (ver `docker-compose.yml` en la raíz del workspace, servicio `citas-api-dev` + `mysql`, o una instalación local):
+Desde la raíz del workspace (`docker-compose.yml`, `.env` copiado de `.env.example`):
 
 ```powershell
-docker compose up -d mysql   # o una instancia MySQL 8.4 local
-mvn test          # pruebas de dominio, aplicación e integración (perfil "test": sin MySQL, ver src/test/resources/application-test.yml)
-mvn spring-boot:run   # requiere MySQL corriendo y variables de entorno (.env); aplica V1/V2 automáticamente vía Flyway
+docker compose up -d                      # mysql + contenedores de desarrollo
+docker exec -it fcv-citas-api-dev bash    # dentro: cd citas-api-develop
+mvn test                                  # 159 pruebas (perfil "test": sin MySQL)
+mvn spring-boot:run                       # aplica Flyway V1..V4 y levanta :8080
 ```
 
-Swagger UI una vez levantado: `http://localhost:8080/swagger-ui.html`.
+- **Datos de demostración:** `.\scripts\seed-demo.ps1` (raíz) carga ADMIN, 8 profesionales, 6 pacientes, disponibilidad y citas; contraseña `Demo1234*`. Correrlo después del primer arranque (Flyway ya aplicado).
+- **ADMIN inicial sin datos demo:** definir `ADMIN_BOOTSTRAP_EMAIL` y `ADMIN_BOOTSTRAP_PASSWORD` (mín. 12 caracteres) en `.env`; se crea al arrancar solo si no existe ningún ADMIN.
+- **Zona horaria:** el contenedor de la API debe correr con `TZ=America/Bogota` (ya está en `docker-compose.yml`); si no, Hibernate corre todas las fechas 5 horas.
+- **n8n:** `N8N_API_KEY`, `N8N_WEBHOOK_URL`, `N8N_WEBHOOK_SECRET` (ver `.env.example`). Sin `N8N_WEBHOOK_URL` no se envían notificaciones.
 
-**Estado verificado (2026-09-18):** con JDK 21 (Temurin) y Maven 3.9.16 instalados, `mvn test` da `BUILD SUCCESS` con **15/15 pruebas**. Sigue sin verificarse `mvn spring-boot:run` contra MySQL real (falta Docker en esta máquina) — cuando lo levantes, revisa que Flyway aplique `V1`/`V2` sin errores.
+Swagger UI: `http://localhost:8080/swagger-ui.html`.
 
-## Documentación compartida
+> `mvn test` usa dobles en memoria. Cambios de persistencia, fechas o seguridad HTTP deben probarse además contra el stack real: ahí aparecieron bugs que las pruebas no detectaban (ver `AGENTS.md`, 2026-09-30).
 
-- `docs/wiki/scrum/`: épicas/HU (11 épicas, 24 HU).
-- `docs/wiki/llm-wiki/`: LLM Wiki global del workspace.
-- `automations/n8n/`: JSON exportados en S5/S6 (todavía no aplica).
+## Documentación
+
+- `AGENTS.md`: reglas y estado verificado del repo.
+- `docs/wiki/scrum/`: épicas e historias de usuario.
+- `docs/wiki/llm-wiki/`: wiki global del workspace (arquitectura, contratos, decisiones, riesgos, log).
+- `docs/db-design/`: modelo 3FN.
+- `automations/n8n/`: especificación de los workflows WF-001/002/003.
 
 Lee `../PRD.md` y `../RESTRICCIONES_TECNICAS.md` antes de tocar código.

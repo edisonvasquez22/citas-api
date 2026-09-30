@@ -69,6 +69,21 @@ public final class Usuario {
     public static Usuario registrarProfesional(String nombres, String apellidos, String tipoDocumento,
                                                 String numeroDocumento, String email, String telefono,
                                                 String passwordHash) {
+        return registrarConRol(nombres, apellidos, tipoDocumento, numeroDocumento, email, telefono, passwordHash,
+            RolNombre.PROFESSIONAL);
+    }
+
+    /** Cuenta ADMIN inicial: la app no permite autoregistrar administradores (ver AdminBootstrapRunner). */
+    public static Usuario registrarAdministrador(String nombres, String apellidos, String tipoDocumento,
+                                                  String numeroDocumento, String email, String telefono,
+                                                  String passwordHash) {
+        return registrarConRol(nombres, apellidos, tipoDocumento, numeroDocumento, email, telefono, passwordHash,
+            RolNombre.ADMIN);
+    }
+
+    private static Usuario registrarConRol(String nombres, String apellidos, String tipoDocumento,
+                                           String numeroDocumento, String email, String telefono,
+                                           String passwordHash, RolNombre rol) {
         requerirNoVacio(nombres, "nombres");
         requerirNoVacio(apellidos, "apellidos");
         requerirNoVacio(tipoDocumento, "tipoDocumento");
@@ -80,7 +95,7 @@ public final class Usuario {
         }
         String emailNormalizado = email.trim().toLowerCase(Locale.ROOT);
         return new Usuario(null, nombres.trim(), apellidos.trim(), tipoDocumento.trim(), numeroDocumento.trim(),
-            emailNormalizado, telefono.trim(), passwordHash, EnumSet.of(RolNombre.PROFESSIONAL), true);
+            emailNormalizado, telefono.trim(), passwordHash, EnumSet.of(rol), true);
     }
 
     /**
