@@ -120,7 +120,7 @@ RF-08. Ejemplo de un día válido: 08:00–12:00 HIC y 14:00–17:00 HIC. Cada b
 | CA-03 | Cumple | `GestionarBloquesDisponibilidadServiceTest.crear_solapadoConOtroBloquePropio_seRechaza`, `BloqueDisponibilidadTest.seSolapaCon_*` | — |
 | CA-04 | Cumple | `GestionarBloquesDisponibilidadServiceTest.crear_enSedeNoHabilitada_seRechaza` | — |
 | CA-05 | Cumple | `GestionarBloquesDisponibilidadServiceTest.eliminar_bloqueConCitaComprometida_seRechaza`, `.editar_bloqueConCitaComprometida_seRechaza` | — |
-| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente) |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25); verificado contra MySQL 8.4 real (2026-10-02) | Ya no queda pendiente: el proyecto ya se había levantado con Docker en otro equipo (2026-09-30) y en este equipo se repitió con MySQL nativo (ver [[decisiones]]). |
 
 ## Historial de validación
 

@@ -98,7 +98,7 @@ RF-06 (CRUD) + RF-09 (duración 30/60 min como atributo de la especialidad, no d
 | CA-01 | Cumple | `AdministrarEspecialidadesServiceTest.crear_conDuracionValida_quedaEnElCatalogo`, `EspecialidadTest` | — |
 | CA-02 | Cumple | `AdministrarEspecialidadesServiceTest.crear_conDuracionInvalida_seRechaza`, `EspecialidadTest.crear_conDuracionInvalida_lanzaValidacionNegocio` | — |
 | CA-03 | Cumple | No existe endpoint `DELETE` en `AdminEspecialidadesController` — solo `PATCH .../status` (desactivar); la ausencia del endpoint satisface la regla por diseño | — |
-| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente) |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25); verificado contra MySQL 8.4 real (2026-10-02, `GET /api/specialties` end-to-end) | Ya no queda pendiente: el proyecto ya se había levantado con Docker en otro equipo (2026-09-30) y en este equipo se repitió con MySQL nativo (ver [[decisiones]]). |
 
 ## Historial de validación
 

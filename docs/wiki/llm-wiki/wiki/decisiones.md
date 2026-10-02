@@ -170,6 +170,14 @@ Evidencia: `mvn test` corrido tras el cambio — ver `wiki/log.md` para el resul
 
 **Cuándo cambiarlo:** si se necesitan plurales complejos, más idiomas o traducción por traductores externos, migrar a `i18next`/`react-intl`. Las claves actuales sirven como punto de partida.
 
+## 2026-10-02 — MySQL nativo en Windows en vez de Docker
+
+**DECISIÓN técnica (aprobada explícitamente por el usuario tras elegir entre 3 alternativas).** Docker Desktop falló de 3 formas distintas en días distintos en la máquina del estudiante (WSL desactualizado → timeout creando la VM, causado por la VPN corporativa GlobalProtect → fallo del túnel de red `vpnkit`), cada intento con una causa diferente — patrón de inestabilidad real del stack de virtualización de ese equipo, no un único bug puntual. Dado que `docker-compose.yml` solo existía para levantar MySQL (los contenedores `citas-api-dev`/`citas-web-dev` nunca se usaron: siempre se corrió `mvn`/`npm` directo en el host) y el backend ya se conecta por variables de entorno simples (`DB_HOST=localhost`, `DB_PORT=3306`), se instaló **MySQL Community Server 8.4.9 nativo en Windows** (`winget install Oracle.MySQL`, servicio de Windows `MySQL84`), sin Docker ni WSL2 de por medio.
+
+**Verificación (2026-10-02):** `mvn spring-boot:run` contra esta instancia aplicó `V1` a `V4` con Flyway por primera vez en todo el proyecto (`Successfully applied 4 migrations ... now at version v4`), `AdminBootstrapRunner` creó el primer ADMIN real (`admin@fcv-citas.local`), y se probó end-to-end con peticiones HTTP reales: login, `GET /api/users/me`, `GET /api/eps` (catálogo de `V3`), `GET /api/specialties` (catálogo de `V2`), `GET /api/admin/eps` y `GET /api/admin/professionals` (autorización ADMIN real). Esto resuelve el bloqueador que tenían HU-001, HU-002, HU-006 y HU-009 a HU-016 (DoD "Parcial"/"No verificable" por falta de MySQL real) — actualizado en cada HU.
+
+**Pendiente, no bloqueante:** repetir específicamente la prueba de concurrencia de 10 hilos (RN-01, HU-014/HU-015) contra esta instancia real — hoy solo corrió contra el doble en memoria y contra la verificación manual de arriba (sin concurrencia real). Las credenciales reales (contraseña de `citas_app`, secretos JWT, contraseña del ADMIN) quedaron en `.env` (raíz del workspace, ya en `.gitignore`) — nunca impresas en ningún log ni commit, conforme a la regla 7 de `AGENTS.md` raíz.
+
 ## Pendiente de diseño reservado al usuario
 
 - **Prototipado visual** (Skill `stitch-design-to-frontend`): pantallas obligatorias, aprobación explícita y handoff a Google AI Studio. No se generará ningún diseño visual ni se elegirá React/Angular en nombre del usuario.

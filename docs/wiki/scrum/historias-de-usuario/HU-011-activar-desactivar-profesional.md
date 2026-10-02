@@ -87,7 +87,7 @@ RF-07 (activar/desactivar). Un profesional desactivado no debe poder publicar nu
 |---|---|---|---|
 | CA-01 | Cumple | `CambiarEstadoProfesionalServiceTest.cambiarEstado_desactiva` | — |
 | CA-02 | Cumple | `CambiarEstadoProfesionalServiceTest.cambiarEstado_reactiva` | — |
-| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente) |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25); verificado contra MySQL 8.4 real (2026-10-02) | Ya no queda pendiente: el proyecto ya se había levantado con Docker en otro equipo (2026-09-30) y en este equipo se repitió con MySQL nativo (ver [[decisiones]]). |
 
 ## Historial de validación
 

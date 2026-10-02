@@ -128,7 +128,7 @@ RF-02 cubre login, emisión de access/refresh token, renovación y revocación/l
 | CA-03 | Cumple | `mvn test`: `AuthFlowIntegrationTest` (refresh válido → 200 con tokens nuevos), `RenovarSesionServiceTest.renovar_conRefreshVigente_rotaElTokenYEmiteUnoNuevo` | Ídem. |
 | CA-04 | Cumple | `mvn test`: `AuthFlowIntegrationTest` (reutilizar el refresh ya rotado → 401), `RenovarSesionServiceTest.renovar_conRefreshRevocado_lanzaTokenInvalido` | Ídem. |
 | CA-05 | Cumple | `mvn test`: `AuthFlowIntegrationTest` (logout → 204, refresh posterior con ese token → 401) | Ídem. |
-| DoD-01 | Parcial | `V1__esquema_inicial.sql` (tabla `refresh_tokens`), `RefreshTokenJpaAdapter`; compila sin errores junto con el resto de `src/main` | Persistencia real implementada y compilando; el flujo JWT completo está 100% verificado con pruebas reales. Falta correr el adaptador contra MySQL real (las pruebas usan el doble en memoria de `testsupport`, sin Docker/MySQL disponible todavía). |
+| DoD-01 | Cumple | `V1__esquema_inicial.sql` (tabla `refresh_tokens`) aplicada contra MySQL 8.4 real (2026-10-02 con MySQL nativo en este equipo; antes, 2026-09-30, con Docker en otro equipo — ver [[decisiones]]); login+refresh+logout probados end-to-end con peticiones HTTP reales | `RefreshTokenJpaAdapter` verificado contra MySQL real, no solo el doble en memoria. |
 
 ## Evidencia de ejecución real (2026-09-18)
 

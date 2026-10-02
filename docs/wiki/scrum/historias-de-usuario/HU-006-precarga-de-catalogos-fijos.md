@@ -90,9 +90,9 @@ RF-05. Es la primera pieza fundacional del backlog: casi toda otra HU depende de
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | No verificable | `V2__seed_catalogos_fijos.sql` (roles, sites, regimes, appointment_statuses, reschedule_statuses, slot_statuses) | Migración de seed implementada con todos los catálogos fijos del RF-05. No verificable porque no se pudo ejecutar Flyway contra MySQL real en este entorno. |
+| CA-01 | Cumple | `V2__seed_catalogos_fijos.sql` aplicada con éxito contra MySQL 8.4 real (2026-10-02); verificado con `GET /api/specialties` (12 especialidades) y `GET /api/eps` (2 EPS de `V3`) contra peticiones HTTP reales | Los catálogos fijos quedaron sembrados y consultables de verdad, no solo en el SQL. |
 | CA-02 | Cumple | Inspección de código: no existe ningún `@RestController` de catálogos en `infrastructure/adapter/in/web/` | Verificable por inspección sin necesidad de ejecución: hoy no hay ningún endpoint de catálogos, ni de lectura ni de escritura. |
-| DoD-01 | No verificable | `V1__esquema_inicial.sql` + `V2__seed_catalogos_fijos.sql` | Migraciones presentes y coherentes con `docs/db-design/MODELO_3FN.md`; no verificable en ejecución real por falta de MySQL/JDK/Maven en este entorno. |
+| DoD-01 | Cumple | `V1`-`V4` aplicadas con éxito contra MySQL 8.4 real (2026-10-02 con MySQL nativo en este equipo; antes, 2026-09-30, con Docker en otro equipo — ver [[decisiones]]) | Migraciones ejecutadas de verdad, no solo revisadas en papel. |
 
 ## Historial de validación
 

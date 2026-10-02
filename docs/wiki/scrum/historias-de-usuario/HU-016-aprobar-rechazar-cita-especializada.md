@@ -108,7 +108,7 @@ RF-12 (decisión) + RF-18 (bandeja). El rechazo exige motivo y libera los slots 
 | CA-02 | Cumple | `GestionarSolicitudesEspecializadasServiceTest.rechazar_conMotivo_pasaARejectedYLiberaElHorario` | El motivo se audita en `appointment_status_history.reason` (HU-023); `appointments` no tiene columna propia para él |
 | CA-03 | Cumple | `GestionarSolicitudesEspecializadasServiceTest.rechazar_sinMotivo_seRechaza` | — |
 | CA-04 | Cumple | `GestionarSolicitudesEspecializadasServiceTest.listarSolicitudes_filtraPorSedeYSoloDevuelveRequested` | — |
-| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente) |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25); verificado contra MySQL 8.4 real (2026-10-02, `GET /api/admin/eps` y `/api/admin/professionals` end-to-end confirman autorización ADMIN real) | Ya no queda pendiente: el proyecto ya se había levantado con Docker en otro equipo (2026-09-30) y en este equipo se repitió con MySQL nativo (ver [[decisiones]]). |
 
 ## Historial de validación
 

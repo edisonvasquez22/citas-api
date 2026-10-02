@@ -103,7 +103,7 @@ RF-07. El profesional es un usuario especializado: primero existe como cuenta, l
 | CA-01 | Cumple | `RegistrarProfesionalServiceTest.registrar_conDatosValidos_creaElProfesionalHabilitado`, `ProfesionalTest` | — |
 | CA-02 | Cumple | `RegistrarProfesionalServiceTest.registrar_conDosEspecialidadesPrimarias_seRechaza`, `ProfesionalTest.registrar_conDosEspecialidadesPrimarias_lanzaValidacionNegocio` | — |
 | CA-03 | Cumple | `RegistrarProfesionalServiceTest.registrar_conEspecialidadInactiva_seRechaza` | También probado: sede inexistente (`registrar_conSedeInexistente_seRechaza`, T-03) |
-| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente) |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25); verificado contra MySQL 8.4 real (2026-10-02, `GET /api/admin/professionals` end-to-end) | Ya no queda pendiente: el proyecto ya se había levantado con Docker en otro equipo (2026-09-30) y en este equipo se repitió con MySQL nativo (ver [[decisiones]]). |
 
 ## Historial de validación
 

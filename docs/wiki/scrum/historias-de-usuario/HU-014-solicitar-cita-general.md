@@ -100,7 +100,7 @@ RF-11. Es el primer flujo de creación de citas real del backlog; valida el circ
 | CA-01 | Cumple | `SolicitarCitaGeneralServiceTest.solicitar_horarioDisponible_quedaApprovedYAuditado` | Auditoría verificada vía `HistorialEstadoCitaPort` |
 | CA-02 | Cumple | `SolicitarCitaGeneralServiceTest.solicitar_horarioYaTomado_lanzaHorarioNoDisponible` | — |
 | CA-03 | Cumple | `SolicitarCitaGeneralServiceTest.solicitar_bajoConcurrencia_soloUnaSolicitudGanaElHorario` (10 hilos reales vía `ExecutorService`, exactamente 1 éxito) | Demostrado explícitamente en Red→Green: se rompió a propósito el `compareAndSet` de la reserva atómica, la prueba falló (10 éxitos en vez de 1), y volvió a pasar al revertir — ver `docs/wiki/llm-wiki/wiki/log.md` (2026-09-25) |
-| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente); la reserva atómica real usa `UPDATE ... WHERE appointment_id IS NULL` (bloqueo de fila InnoDB), no probado aún contra MySQL |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25); app arrancada contra MySQL 8.4 real (2026-10-02 con MySQL nativo en este equipo; antes, 2026-09-30, con Docker en otro equipo) con Flyway/JPA funcionando end-to-end | La conexión real a MySQL ya está verificada. Pendiente más fino (no bloqueante): repetir específicamente la prueba de concurrencia de 10 hilos contra MySQL real (hoy solo corrió contra el doble en memoria) para confirmar el `UPDATE ... WHERE appointment_id IS NULL` bajo bloqueo de fila InnoDB real. |
 
 ## Historial de validación
 

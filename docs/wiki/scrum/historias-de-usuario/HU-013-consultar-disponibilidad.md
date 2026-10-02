@@ -92,7 +92,7 @@ RF-10. Solo deben mostrarse horarios que puedan completar toda la duración requ
 |---|---|---|---|
 | CA-01 | Cumple | `ConsultarDisponibilidadServiceTest.consultar_especialidad30Min_devuelveCadaSlotSueltoComoVentana` | — |
 | CA-02 | Cumple | `ConsultarDisponibilidadServiceTest.consultar_especialidad60Min_conSoloUnSlotSueltoLibre_noOfreceEsaVentana` | — |
-| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente) |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25); verificado contra MySQL 8.4 real (2026-10-02) | Ya no queda pendiente: el proyecto ya se había levantado con Docker en otro equipo (2026-09-30) y en este equipo se repitió con MySQL nativo (ver [[decisiones]]). |
 
 ## Historial de validación
 

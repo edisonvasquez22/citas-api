@@ -118,7 +118,7 @@ Primer paso del ciclo de vida de cualquier paciente ficticio. RF-01 exige datos 
 | CA-02 | Cumple | `mvn test`: `AuthFlowIntegrationTest` (segundo `register` con el mismo email → 409), `RegistrarUsuarioServiceTest.registrar_conEmailDuplicado_lanzaExcepcionDeConflicto` | Ídem. |
 | CA-03 | Cumple | `mvn test`: `RegistrarUsuarioServiceTest.registrar_conDocumentoDuplicado_lanzaExcepcionDeConflicto` | Ídem. |
 | CA-04 | Cumple | `mvn test`: `AuthFlowIntegrationTest.registro_conDatosIncompletos_devuelve400ConDetalleDeCampos` (agregada 2026-09-18) | Verifica `@NotBlank`/`@Email`/`@Size` en `AuthDtos.RegisterRequest` + `GlobalExceptionHandler.handleValidacion` → 400 con detalle de campos. |
-| DoD-01 | Parcial | `V1__esquema_inicial.sql` (tabla `users`/`user_roles`), `UsuarioJpaAdapter`; compilación real de los 36 archivos de `src/main` sin errores | El código de persistencia compila y el flujo de autenticación está 100% verificado con pruebas reales. Lo único no verificado: correr la migración Flyway y el adaptador JPA contra un MySQL real (las pruebas usan los dobles en memoria de `testsupport`, no hay Docker/MySQL disponible todavía). |
+| DoD-01 | Cumple | `V1__esquema_inicial.sql` aplicada con éxito contra MySQL 8.4 real (2026-10-02 con MySQL nativo en este equipo; antes, 2026-09-30, con Docker en otro equipo — ver [[decisiones]]); `UsuarioJpaAdapter` verificado end-to-end: `POST /api/auth/register`→`POST /api/auth/login` reales contra la base real | Ya no queda nada "no verificado": Flyway corrió contra MySQL real por primera vez en el proyecto y el flujo completo de autenticación se probó con peticiones HTTP reales, no solo dobles en memoria. |
 
 ## Evidencia de ejecución real (2026-09-18)
 

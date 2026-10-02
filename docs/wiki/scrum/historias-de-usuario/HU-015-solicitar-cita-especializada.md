@@ -101,7 +101,7 @@ RF-12. A diferencia de la cita general, nace en `REQUESTED` y retiene el horario
 | CA-01 | Cumple | `SolicitarCitaEspecializadaServiceTest.solicitar_conEspecialidadAsociadaYHorarioLibre_naceEnRequested` | — |
 | CA-02 | Cumple | `SolicitarCitaEspecializadaServiceTest.solicitar_conEspecialidadNoAsociadaAlProfesional_seRechaza`, `.solicitar_conEspecialidadInactiva_seRechaza` | — |
 | CA-03 | Cumple | `SolicitarCitaEspecializadaServiceTest.solicitar_bajoConcurrencia_soloUnaSolicitudRetieneElHorario` (10 hilos reales, exactamente 1 éxito) | Mismo mecanismo y misma demostración Red→Green que HU-014 — ver `docs/wiki/llm-wiki/wiki/log.md` (2026-09-25) |
-| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente) |
+| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25); app arrancada contra MySQL 8.4 real (2026-10-02 con MySQL nativo en este equipo; antes, 2026-09-30, con Docker en otro equipo) | Conexión real a MySQL verificada; ver HU-014 para la nota de la prueba de concurrencia específica, aún no repetida contra MySQL real. |
 
 ## Historial de validación
 
