@@ -29,3 +29,13 @@ Los JSON de esta carpeta **no contienen secretos**: las credenciales se reasigna
 `POST` con cabecera `X-Webhook-Secret` y cuerpo JSON `{tipo, citaId, motivo, momento, estadoCita, inicio, fin, pacienteNombre, pacienteEmail, profesionalNombre, sedeNombre, especialidadNombre}`.
 Respuestas deterministas: `200` correo enviado, `400` evento inválido, `503` Gmail falló o destinatario sin configurar.
 Tipos: `ESPECIALIZADA_APROBADA`, `ESPECIALIZADA_RECHAZADA`, `CITA_CANCELADA`, `REPROGRAMACION_APROBADA`, `REPROGRAMACION_RECHAZADA`.
+
+## Estado de verificación (2026-10-02)
+
+| Workflow | Resultado |
+|---|---|
+| WF-002 | Probado de punta a punta con `citas-api` real: aprobar, rechazar y cancelar disparan el webhook y llega el correo (`200`); sin secreto `403`; evento inválido `400`; destinatario sin configurar `503`. |
+| WF-001 | Ejecución manual en n8n contra la API expuesta con un túnel temporal: consulta con `X-Integration-Key`, correo recibido. La deduplicación se probó localmente; en n8n solo persiste en ejecuciones de producción (no en manuales). |
+| WF-003 | Ejecución manual en n8n contra la API expuesta con un túnel temporal: resumen por sede/estado/especialidad recibido, sin datos personales. |
+
+Riesgos residuales: la credencial de Gmail usa el alcance amplio que exige el nodo de n8n (conviene una cuenta de laboratorio); el túnel de pruebas es público mientras está abierto y solo los endpoints `/api/integration/**` aceptan la clave de integración; el destinatario de laboratorio evita escribir a pacientes (los datos son sintéticos).
