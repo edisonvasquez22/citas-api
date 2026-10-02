@@ -39,3 +39,12 @@ Tipos: `ESPECIALIZADA_APROBADA`, `ESPECIALIZADA_RECHAZADA`, `CITA_CANCELADA`, `R
 | WF-003 | Ejecución manual en n8n contra la API expuesta con un túnel temporal: resumen por sede/estado/especialidad recibido, sin datos personales. |
 
 Riesgos residuales: la credencial de Gmail usa el alcance amplio que exige el nodo de n8n (conviene una cuenta de laboratorio); el túnel de pruebas es público mientras está abierto y solo los endpoints `/api/integration/**` aceptan la clave de integración; el destinatario de laboratorio evita escribir a pacientes (los datos son sintéticos).
+
+## Evidencia MCP (S5) — 2026-10-02
+
+Desde el agente (Claude Code) y mediante el conector MCP de n8n del curso se hizo, sobre los workflows propios del estudiante (acceso MCP habilitado por workflow):
+
+1. **Listar:** `search_workflows` devolvió los tres workflows (`WF-001`, `WF-002`, `WF-003`) con `availableInMCP: true`. Antes de habilitarlo, `get_workflow_details` respondía "Workflow is not available in MCP" (el control por workflow funciona).
+2. **Inspeccionar:** `get_workflow_details` de WF-002 devolvió los 7 nodos, las conexiones, las credenciales asignadas (solo nombres) y las URL del webhook.
+3. **Ejecución controlada:** `execute_workflow` (modo `manual`, disparador "Webhook estado de cita", evento `REPROGRAMACION_APROBADA` de prueba) → ejecución `#72`, estado `success`; Gmail respondió con el mensaje enviado.
+4. **Hallazgo por inspección de la ejecución:** el correo mostraba "4:00 a. m." para una cita a las 09:00 (el backend envía hora local de Bogotá sin zona y el nodo Code la interpretaba como UTC). Corregido en los JSON (`fmt` ya no convierte horas sin zona) y probado localmente.
