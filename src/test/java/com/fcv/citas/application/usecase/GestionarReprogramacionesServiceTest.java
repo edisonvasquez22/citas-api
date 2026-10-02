@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fcv.citas.application.port.in.SolicitarReprogramacionUseCase.Command;
+import com.fcv.citas.domain.exception.TransicionEstadoInvalidaException;
 import com.fcv.citas.domain.exception.ValidacionNegocioException;
 import com.fcv.citas.domain.model.AsignacionEspecialidad;
 import com.fcv.citas.domain.model.BloqueDisponibilidad;
@@ -18,7 +19,18 @@ import com.fcv.citas.testsupport.InMemorySolicitudReprogramacionRepositoryAdapte
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import com.fcv.citas.application.port.out.SolicitudReprogramacionRepositoryPort;
+import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -115,5 +127,68 @@ class GestionarReprogramacionesServiceTest {
 
         assertThatThrownBy(() -> gestionarService.rechazar(ADMIN, solicitudId, "  "))
             .isInstanceOf(ValidacionNegocioException.class);
+    }
+
+    /** RF-18: la bandeja PENDING se filtra por sede, profesional, especialidad y fecha solicitadas. */
+    @Test
+    void listarPendientes_aplicaFiltrosOpcionales() {
+        solicitarReprogramacion();
+
+        assertThat(gestionarService.listarPendientes(null, null, null, null)).hasSize(1);
+        assertThat(gestionarService.listarPendientes(SEDE, profesionalId, 1L, fechaNueva)).hasSize(1);
+        assertThat(gestionarService.listarPendientes(SEDE + 1, null, null, null)).isEmpty();
+        assertThat(gestionarService.listarPendientes(null, profesionalId + 1, null, null)).isEmpty();
+        assertThat(gestionarService.listarPendientes(null, null, 2L, null)).isEmpty();
+        assertThat(gestionarService.listarPendientes(null, null, null, fechaNueva.plusDays(1))).isEmpty();
+    }
+
+    /** HU-020 (concurrencia): 10 admins aprueban la MISMA solicitud a la vez; solo uno debe tener éxito. */
+    @Test
+    void aprobar_concurrentementeLaMismaSolicitud_soloUnaAprobacionTieneExito() throws Exception {
+        Long solicitudId = solicitarReprogramacion();
+        int hilos = 10;
+        // Latencia simulada al leer la solicitud (como una BD real): ensancha la ventana de carrera.
+        var solicitudesLentas = (SolicitudReprogramacionRepositoryPort) Proxy.newProxyInstance(
+            getClass().getClassLoader(), new Class<?>[] {SolicitudReprogramacionRepositoryPort.class},
+            (proxy, metodo, args) -> {
+                Object r = metodo.invoke(solicitudRepository, args);
+                if (metodo.getName().equals("buscarPorId")) {
+                    Thread.sleep(50);
+                }
+                return r;
+            });
+        var concurrente = new GestionarReprogramacionesService(solicitudesLentas, citaRepository, slotRepository,
+            evento -> { });
+        ExecutorService pool = Executors.newFixedThreadPool(hilos);
+        CountDownLatch listos = new CountDownLatch(hilos);
+        CountDownLatch salida = new CountDownLatch(1);
+        AtomicInteger exitos = new AtomicInteger();
+        AtomicInteger rechazadasPorEstado = new AtomicInteger();
+        List<Future<?>> futuros = new ArrayList<>();
+        for (int i = 0; i < hilos; i++) {
+            Callable<Void> tarea = () -> {
+                listos.countDown();
+                salida.await();
+                try {
+                    concurrente.aprobar(ADMIN, solicitudId);
+                    exitos.incrementAndGet();
+                } catch (TransicionEstadoInvalidaException e) {
+                    rechazadasPorEstado.incrementAndGet();
+                }
+                return null;
+            };
+            futuros.add(pool.submit(tarea));
+        }
+        listos.await(5, TimeUnit.SECONDS);
+        salida.countDown();
+        for (Future<?> f : futuros) {
+            f.get(10, TimeUnit.SECONDS);
+        }
+        pool.shutdown();
+
+        assertThat(exitos.get()).isEqualTo(1);
+        assertThat(rechazadasPorEstado.get()).isEqualTo(hilos - 1);
+        assertThat(citaRepository.buscarPorId(citaOriginal.getId()).orElseThrow().getInicio())
+            .isEqualTo(LocalDateTime.of(fechaNueva, horaNueva));
     }
 }

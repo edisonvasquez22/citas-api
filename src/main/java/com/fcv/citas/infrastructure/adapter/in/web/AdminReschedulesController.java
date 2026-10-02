@@ -3,6 +3,8 @@ package com.fcv.citas.infrastructure.adapter.in.web;
 import com.fcv.citas.application.port.in.GestionarReprogramacionesUseCase;
 import com.fcv.citas.infrastructure.adapter.in.web.dto.AdminReprogramacionDtos;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +12,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** HU-020 — ADMIN gestiona la bandeja de solicitudes de reprogramación PENDING. */
@@ -24,8 +28,13 @@ public class AdminReschedulesController {
     }
 
     @GetMapping
-    public List<AdminReprogramacionDtos.Resumen> listarPendientes() {
-        return gestionarReprogramacionesUseCase.listarPendientes().stream().map(AdminReschedulesController::aResumen)
+    public List<AdminReprogramacionDtos.Resumen> listarPendientes(
+            @RequestParam(required = false) Long sedeId,
+            @RequestParam(required = false) Long profesionalId,
+            @RequestParam(required = false) Long especialidadId,
+            @RequestParam(required = false) LocalDate fecha) {
+        return gestionarReprogramacionesUseCase.listarPendientes(sedeId, profesionalId, especialidadId, fecha).stream()
+            .map(AdminReschedulesController::aResumen)
             .toList();
     }
 

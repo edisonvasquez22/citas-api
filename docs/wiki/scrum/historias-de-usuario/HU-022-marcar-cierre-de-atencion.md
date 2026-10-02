@@ -101,7 +101,7 @@ RF-17. Debe registrarse historial del cambio (RF-19).
 | CA-01 | Cumple | `CerrarAtencionServiceTest.completar_citaPropiaAprobadaYPasada_pasaACompleted` | — |
 | CA-02 | Cumple | `CerrarAtencionServiceTest.marcarNoShow_citaPropiaAprobadaYPasada_pasaANoShow` | — |
 | CA-03 | Cumple | `CerrarAtencionServiceTest.completar_citaDeOtroProfesional_seRechazaComoNoEncontrada` | 404 en vez de 403, mismo patrón de ownership ya usado en HU-018/HU-021 |
-| DoD-01 | Cumple | `mvn test`: 106/106, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente); sin UI en `citas-web` todavía |
+| DoD-01 | Cumple | `mvn test`: 161/161, `BUILD SUCCESS` (2026-10-02); UI real en `citas-web` (`AgendaProfesionalScreen.tsx`, `CerrarAtencionModal.tsx`) verificada con Playwright (2026-09-29); stack levantado contra MySQL 8.4 real con Docker en otro equipo (2026-09-30) y con MySQL nativo en este equipo (2026-10-02) | Ya no queda nada pendiente de verificación. |
 
 ## Historial de validación
 

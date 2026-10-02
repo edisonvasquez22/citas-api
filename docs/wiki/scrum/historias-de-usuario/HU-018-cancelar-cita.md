@@ -101,7 +101,7 @@ RF-14. Una cita cancelada no se reactiva directamente y debe quedar historial de
 | CA-01 | Cumple | `CancelarCitaServiceTest.cancelar_citaPropiaFuturaYNoTerminal_pasaACancelled` | — |
 | CA-02 | Cumple | `CancelarCitaServiceTest.cancelar_citaYaCancelada_seRechaza` | — |
 | CA-03 | Cumple | `CancelarCitaServiceTest.cancelar_citaDeOtroUsuario_seRechazaComoNoEncontrada` | 404 en vez de 403, mismo patrón que `GestionarBloquesDisponibilidadService` (no revela existencia del recurso) |
-| DoD-01 | Cumple | `mvn test`: 106/106, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente); sin UI en `citas-web` todavía |
+| DoD-01 | Cumple | `mvn test`: 161/161, `BUILD SUCCESS` (2026-10-02); UI real en `citas-web` (`MisCitasScreen.tsx`, `CancelarCitaModal.tsx`) verificada con Playwright (2026-09-29); stack levantado contra MySQL 8.4 real con Docker en otro equipo (2026-09-30) y con MySQL nativo en este equipo (2026-10-02) | Ya no queda nada pendiente de verificación. |
 
 ## Historial de validación
 

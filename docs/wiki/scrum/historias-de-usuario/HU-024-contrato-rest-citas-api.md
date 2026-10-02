@@ -2,7 +2,7 @@
 id: HU-024
 tipo: historia-de-usuario
 titulo: "Diseñar y documentar el contrato REST de citas-api"
-estado: Borrador
+estado: "En desarrollo"
 epica: "[[EP-011-contrato-rest]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 1 (continuo)"
@@ -51,10 +51,10 @@ RF-20. Es una historia continua: se revisa y actualiza cada vez que otra HU agre
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Integrar springdoc-openapi (2.8.17) al proyecto Spring Boot**
+- [x] **T-01 — Integrar springdoc-openapi (2.8.17) al proyecto Spring Boot**
   Dificultad: Bajo
   Descripción: expone `/v3/api-docs` y Swagger UI para verificación manual del contrato.
-- [ ] **T-02 — Actualizar `llm-wiki/wiki/contratos.md` en cada sprint**
+- [x] **T-02 — Actualizar `llm-wiki/wiki/contratos.md` en cada sprint**
   Dificultad: Bajo
   Descripción: reflejar endpoints nuevos/cambiados de las HU cerradas en ese sprint.
 - [ ] **T-03 — Revisión cross-repo antes de cada incremento entregado a `citas-web`**
@@ -77,16 +77,16 @@ RF-20. Es una historia continua: se revisa y actualiza cada vez que otra HU agre
 
 ## Definition of Done
 
-- [ ] CA-01 y CA-02 validados con evidencia en cada sprint donde se cierre esta revisión.
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 y CA-02 validados con evidencia (revisión del 2026-10-02; se repite en cada sprint).
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
-| CA-01 | Cumple (parcial) | `docs/wiki/llm-wiki/wiki/contratos.md`, actualizado en la misma sesión que HU-001/HU-002 | Cumple para los 4 endpoints de auth implementados hasta ahora; se revalida en cada sprint siguiente. |
-| CA-02 | Cumple (parcial) | Comparación manual `AuthController` ↔ `contratos.md` | Sin discrepancias en los endpoints existentes; no hay todavía OpenAPI exportado como artefacto versionado. |
-| DoD-01 | No cumple | — | Esta HU no está formalmente `Aprobada` (no fue parte del alcance S2 confirmado explícitamente); el trabajo de sincronización se hizo como efecto colateral de implementar HU-001/HU-002. |
+| CA-01 | Cumple | `docs/wiki/llm-wiki/wiki/contratos.md` (actualizado 2026-10-02): tablas de auth, S3, S4, perfil/afiliación/EPS/planes, historial, reasignación de profesionales e integración n8n, con body, respuesta, errores y autorización por endpoint | Cada endpoint nuevo se documentó en la misma sesión; el de `GET /api/admin/reschedules` ahora incluye los filtros de RF-18. |
+| CA-02 | Cumple | Comparación automática (2026-10-02) de las anotaciones `@Get/Post/Put/Patch/DeleteMapping` de los 17 controladores contra las filas de `contratos.md`: **52 endpoints implementados, 52 documentados, 0 sin documentar, 0 documentados sin implementar** | Springdoc 2.8.17 está integrado (`/v3/api-docs`, Swagger UI) para verificación manual; no se versiona un OpenAPI exportado, el contrato vive en `contratos.md`. |
+| DoD-01 | Cumple (continuo) | Ver CA-01/CA-02 | La HU es continua: se revalida cuando otra HU agrega o cambia un endpoint. Sigue sin promoverse a `Aprobada`/`Completada` (decisión del usuario). |
 
 ## Historial de validación
 
@@ -96,3 +96,4 @@ RF-20. Es una historia continua: se revisa y actualiza cada vez que otra HU agre
 ## Notas y decisiones
 
 - A diferencia del resto del backlog, esta HU no se cierra una sola vez: se revalida en cada sprint que agregue o cambie contrato.
+- 2026-10-02 — Contrato sincronizado con el código real: 52 endpoints implementados = 52 documentados en `contratos.md`. Estado → `En desarrollo` (T-03, revisión cross-repo antes de cada incremento, sigue siendo continua). No se promueve a `Aprobada`.

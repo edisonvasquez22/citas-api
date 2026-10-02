@@ -92,7 +92,7 @@ RF-19. Es un componente transversal usado por todas las HU que producen una tran
 
 ## Definition of Done
 
-- [x] CA-01 y CA-02 validados con evidencia. CA-03 (lectura por ownership vía API) queda pendiente de HU-017/HU-021 — ver Notas.
+- [x] CA-01, CA-02 y CA-03 validados con evidencia (CA-03 cerrado el 2026-10-02 con `GET /api/appointments/{id}/history`).
 - [x] Migración Flyway coherente con el diseño 3FN aprobado.
 - [x] `mvn test` pasa para los módulos afectados.
 - [x] Al menos una HU consumidora (p. ej. [[HU-014-solicitar-cita-general]]) demuestra la integración end-to-end.
@@ -104,8 +104,8 @@ RF-19. Es un componente transversal usado por todas las HU que producen una tran
 |---|---|---|---|
 | CA-01 | Cumple | `SolicitarCitaGeneralServiceTest.solicitar_horarioDisponible_quedaApprovedYAuditado`, y HU-014/HU-015/HU-016 registran vía `HistorialEstadoCitaPort` en cada transición | — |
 | CA-02 | Cumple | `HistorialEstadoCitaPort` no declara ningún método de edición/borrado (solo `registrar`/`listarPorCita`); no existe ningún endpoint REST que lo permita | — |
-| CA-03 | **Parcial** | — | El registro y la retención del historial funcionan; su **exposición por API filtrada por ownership** depende de endpoints que no son parte del alcance de S3 (HU-017 "mis citas", HU-021 "agenda del profesional"). Se retoma cuando esas HU se aprueben. |
-| DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25) | Sin verificar aún contra MySQL real (Docker pendiente) |
+| CA-03 | Cumple | `AppointmentHistoryController` (`GET /api/appointments/{id}/history`); `ConsultarHistorialCitaServiceTest` (paciente dueño, profesional de la cita y ADMIN ven el historial; otro paciente u otro profesional → 404; cita inexistente → 404); UI real `HistorialCitaModal.tsx` en `citas-web` | Endpoint agregado por el trabajo hecho en otro equipo (2026-09-30), no documentado antes en esta HU. Ownership igual que HU-017/HU-021: quien no es dueño recibe 404, no 403. |
+| DoD-01 | Cumple | `mvn test`: 161/161, `BUILD SUCCESS` (2026-10-02); stack levantado contra MySQL 8.4 real con Docker en otro equipo (2026-09-30) y con MySQL nativo en este equipo (2026-10-02) | Ya no queda nada pendiente de verificación. |
 
 ## Historial de validación
 
@@ -115,3 +115,4 @@ RF-19. Es un componente transversal usado por todas las HU que producen una tran
 ## Notas y decisiones
 
 - Implementada en paralelo con [[HU-014-solicitar-cita-general]], tal como recomendaba esta HU.
+- 2026-10-02 — CA-03 pasa a `Cumple`: el endpoint `GET /api/appointments/{id}/history` (ownership: dueño, profesional de la cita o ADMIN; otros → 404) y su UI (`HistorialCitaModal.tsx`) ya existen.

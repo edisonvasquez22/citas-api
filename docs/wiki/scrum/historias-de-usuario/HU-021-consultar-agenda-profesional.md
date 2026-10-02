@@ -89,7 +89,7 @@ RF-16. El profesional no debe poder ver datos de usuarios fuera de sus propias c
 |---|---|---|---|
 | CA-01 | Cumple | `ConsultarAgendaPropiaServiceTest.listar_devuelveSoloAprobadasDelProfesionalPropio`, `.listar_filtraPorSede` | — |
 | CA-02 | Cumple | `AgendaProfesionalController` (sin `@PathVariable`, el profesional sale de `Authentication`) + `S3AuthorizationIntegrationTest.agendaProfesional_conTokenUser_devuelve403` | El endpoint no tiene forma de pedir la agenda de otro profesional (no recibe ningún id de profesional en la request) — garantía más fuerte que un chequeo de ownership post-hoc |
-| DoD-01 | Cumple | `mvn test`: 106/106, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente); sin UI en `citas-web` todavía |
+| DoD-01 | Cumple | `mvn test`: 161/161, `BUILD SUCCESS` (2026-10-02); UI real en `citas-web` (`AgendaProfesionalScreen.tsx`) verificada con Playwright (2026-09-29); stack levantado contra MySQL 8.4 real con Docker en otro equipo (2026-09-30) y con MySQL nativo en este equipo (2026-10-02) | Ya no queda nada pendiente de verificación. |
 
 ## Historial de validación
 

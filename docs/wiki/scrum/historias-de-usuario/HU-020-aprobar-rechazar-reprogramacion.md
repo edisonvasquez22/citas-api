@@ -59,15 +59,16 @@ RF-15 (decisión) + RF-18 (aparece en la bandeja administrativa junto a las cita
 - [x] **T-01 — Casos de uso `AprobarReprogramacion`/`RechazarReprogramacion`**
   Dificultad: Alto
   Descripción: aprobar libera slots antiguos y asigna los nuevos en la misma operación; rechazar libera solo la reserva provisional.
+  Actualización 2026-10-02: aprobar y rechazar se ejecutan bajo `CitaRepositoryPort.conBloqueoDeEscritura` (misma técnica que LOOP_03) y releen la solicitud dentro del bloqueo, así que decisiones simultáneas sobre la misma solicitud se serializan y solo la primera tiene éxito.
 - [x] **T-02 — Endpoint de bandeja + acciones**
   Dificultad: Medio
-  Descripción: **decisión de implementación**: endpoint propio (`AdminReschedulesController`, `/api/admin/reschedules`), no compartido con HU-016. `GET` sin filtros (todas las `PENDING`) — el alcance original mencionaba filtros por sede/profesional/especialidad, pero eso exigiría un join `reschedule_requests`↔`appointments` sin relación JPA mapeada; se dejó fuera por no estar cubierto por ningún CA numerado, ver nota abajo.
+  Descripción: **decisión de implementación**: endpoint propio (`AdminReschedulesController`, `/api/admin/reschedules`), no compartido con HU-016. `GET` con filtros opcionales `sedeId`/`profesionalId`/`especialidadId`/`fecha` (RF-18, agregados el 2026-10-02; `sedeId` y `fecha` aplican a lo SOLICITADO, profesional y especialidad se resuelven desde la cita).
 - [x] **T-03 — Registro de auditoría de la transición**
   Dificultad: Bajo
   Descripción: ver DoD-02 — la transición vive en `reschedule_requests` mismo (`status_id`/`decided_by_user_id`/`decided_at`/`decision_reason`), no en `appointment_status_history` (la cita no cambia de `EstadoCita` en este flujo).
 - [x] **T-04 — Pruebas**
   Dificultad: Alto
-  Descripción: aprobación exitosa (verifica liberación de slots antiguos y asignación de nuevos), rechazo con motivo (verifica que la cita original quedó intacta), rechazo sin motivo. **No incluye** una prueba de concurrencia dedicada para doble-aprobación simultánea de la misma solicitud (a diferencia de RN-01 en HU-014/015) — ver DoD-03.
+  Descripción: aprobación exitosa (verifica liberación de slots antiguos y asignación de nuevos), rechazo con motivo (verifica que la cita original quedó intacta), rechazo sin motivo, filtros de la bandeja y aprobación concurrente (10 hilos sobre la misma solicitud).
 
 ## Criterios de aceptación
 
@@ -94,7 +95,7 @@ RF-15 (decisión) + RF-18 (aparece en la bandeja administrativa junto a las cita
 - [x] CA-01 a CA-03 validados con evidencia.
 - [x] Transición registrada (ver DoD-02: mecanismo distinto a `appointment_status_history`).
 - [x] `mvn test` pasa para los módulos afectados.
-- [ ] Prueba dedicada de atomicidad de la aprobación bajo concurrencia (ver DoD-03: no incluida).
+- [x] Prueba dedicada de atomicidad de la aprobación bajo concurrencia (ver DoD-03).
 - [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
@@ -105,8 +106,9 @@ RF-15 (decisión) + RF-18 (aparece en la bandeja administrativa junto a las cita
 | CA-02 | Cumple | `GestionarReprogramacionesServiceTest.rechazar_conMotivo_liberaSoloLaFranjaNuevaYDejaLaCitaOriginalIntacta` | Verifica explícitamente que la franja antigua sigue ocupada y la nueva quedó libre |
 | CA-03 | Cumple | `GestionarReprogramacionesServiceTest.rechazar_sinMotivo_seRechaza` | — |
 | DoD-02 | Cumple | `SolicitudReprogramacion.aprobar()`/`rechazar()` (columnas `decided_by_user_id`/`decided_at`/`decision_reason`) | Mismo razonamiento que HU-019 DoD-02: no hay entrada en `appointment_status_history` porque el `EstadoCita` de la cita no cambia en este flujo (RN-10) |
-| DoD-03 | No verificable | — | No se escribió una prueba de concurrencia (10 hilos, patrón de HU-014/015 RN-01) para doble-aprobación simultánea de la misma solicitud. Riesgo acotado: aunque ocurriera, la atomicidad real de los slots (RN-01, ya probada) sigue protegiendo contra doble-reserva del horario; el peor caso es una ambigüedad de "quién decidió" en `reschedule_requests`, no una inconsistencia de agenda. Pendiente si se quiere cerrar formalmente. |
-| DoD-01 | Cumple | `mvn test`: 109/109, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente) |
+| DoD-03 | Cumple | `GestionarReprogramacionesServiceTest.aprobar_concurrentementeLaMismaSolicitud_soloUnaAprobacionTieneExito` (10 hilos, latencia simulada en la lectura de la solicitud) | **Red→Green demostrado el 2026-10-02**: sin el bloqueo la prueba falló (varias aprobaciones simultáneas tenían éxito, un bug real); con `conBloqueoDeEscritura` pasa (1 éxito, 9 `TransicionEstadoInvalidaException`). Pendiente no bloqueante: repetirla contra MySQL real (hoy solo contra el doble en memoria; `SELECT ... FOR UPDATE` ya se usa en LOOP_03). |
+| RF-18 | Cumple | `GestionarReprogramacionesServiceTest.listarPendientes_aplicaFiltrosOpcionales`; `AdminReschedulesController` (`@RequestParam` sedeId/profesionalId/especialidadId/fecha) | La bandeja de reprogramaciones ya se filtra igual que la de citas especializadas (HU-016 CA-04). |
+| DoD-01 | Cumple | `mvn test`: 161/161, `BUILD SUCCESS` (2026-10-02); stack levantado contra MySQL 8.4 real con Docker en otro equipo (2026-09-30) y con MySQL nativo en este equipo (2026-10-02) | Ya no queda pendiente la verificación contra MySQL real. |
 
 ## Historial de validación
 
@@ -119,3 +121,4 @@ RF-15 (decisión) + RF-18 (aparece en la bandeja administrativa junto a las cita
 ## Notas y decisiones
 
 - Ver [[HU-019-solicitar-reprogramacion]] para el detalle de la ejecución de LOOP_02.
+- 2026-10-02 — Cierre de brechas del checklist PRD↔HU↔código: prueba de concurrencia de doble-aprobación (encontró y corrigió un bug real) y filtros de la bandeja (RF-18). `mvn test`: 161/161.

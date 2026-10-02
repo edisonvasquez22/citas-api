@@ -11,10 +11,10 @@ import com.fcv.citas.domain.model.EstadoSolicitudReprogramacion;
 import com.fcv.citas.domain.model.EventoCambioEstado;
 import com.fcv.citas.domain.model.TipoEventoCita;
 import com.fcv.citas.domain.model.SolicitudReprogramacion;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * HU-020: durante el PENDING, tanto la franja antigua como la nueva de la cita están retenidas bajo el
@@ -39,15 +39,34 @@ public class GestionarReprogramacionesService implements GestionarReprogramacion
     }
 
     @Override
-    public List<Resumen> listarPendientes() {
+    public List<Resumen> listarPendientes(Long sedeId, Long profesionalId, Long especialidadId, LocalDate fecha) {
         return solicitudRepository.listarPorEstado(EstadoSolicitudReprogramacion.PENDING).stream()
+            .filter(s -> sedeId == null || sedeId.equals(s.getSedeSolicitadaId()))
+            .filter(s -> fecha == null || fecha.equals(s.getInicioSolicitado().toLocalDate()))
+            .filter(s -> coincideCita(s, profesionalId, especialidadId))
             .map(this::aResumen)
             .toList();
     }
 
+    private boolean coincideCita(SolicitudReprogramacion solicitud, Long profesionalId, Long especialidadId) {
+        if (profesionalId == null && especialidadId == null) {
+            return true;
+        }
+        return citaRepository.buscarPorId(solicitud.getCitaId())
+            .filter(c -> profesionalId == null || profesionalId.equals(c.getProfesionalId()))
+            .filter(c -> especialidadId == null || especialidadId.equals(c.getEspecialidadId()))
+            .isPresent();
+    }
+
     @Override
-    @Transactional
     public Resumen aprobar(Long adminUsuarioId, Long solicitudId) {
+        Long citaId = obtener(solicitudId).getCitaId();
+        // HU-020: serializa decisiones concurrentes sobre la misma cita (`conBloqueoDeEscritura` abre la
+        // transacción) y relee la solicitud DENTRO del bloqueo: solo la primera decisión la ve en PENDING.
+        return citaRepository.conBloqueoDeEscritura(citaId, () -> aprobarBloqueado(adminUsuarioId, solicitudId));
+    }
+
+    private Resumen aprobarBloqueado(Long adminUsuarioId, Long solicitudId) {
         SolicitudReprogramacion solicitud = obtener(solicitudId);
         Cita cita = obtenerCita(solicitud.getCitaId());
 
@@ -66,8 +85,13 @@ public class GestionarReprogramacionesService implements GestionarReprogramacion
     }
 
     @Override
-    @Transactional
     public Resumen rechazar(Long adminUsuarioId, Long solicitudId, String motivo) {
+        Long citaId = obtener(solicitudId).getCitaId();
+        return citaRepository.conBloqueoDeEscritura(citaId,
+            () -> rechazarBloqueado(adminUsuarioId, solicitudId, motivo));
+    }
+
+    private Resumen rechazarBloqueado(Long adminUsuarioId, Long solicitudId, String motivo) {
         SolicitudReprogramacion solicitud = obtener(solicitudId);
         Cita cita = obtenerCita(solicitud.getCitaId());
 
