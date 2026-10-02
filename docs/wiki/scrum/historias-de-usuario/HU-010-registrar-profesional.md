@@ -2,7 +2,7 @@
 id: HU-010
 tipo: historia-de-usuario
 titulo: "Registrar profesional y asignar especialidades/sedes"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-004-gestion-de-profesionales]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -59,13 +59,13 @@ RF-07. El profesional es un usuario especializado: primero existe como cuenta, l
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Caso de uso `RegistrarProfesional`**
+- [x] **T-01 — Caso de uso `RegistrarProfesional`**
   Dificultad: Medio
   Descripción: crea la cuenta, valida especialidades activas y unicidad de la especialidad primaria, valida sedes.
-- [ ] **T-02 — Endpoint REST + migración Flyway de profesional/especialidad/sede**
+- [x] **T-02 — Endpoint REST + migración Flyway de profesional/especialidad/sede**
   Dificultad: Alto
   Descripción: bloqueada hasta contar con el diseño 3FN aprobado del usuario.
-- [ ] **T-03 — Pruebas**
+- [x] **T-03 — Pruebas**
   Dificultad: Medio
   Descripción: alta válida, especialidad inactiva, dos especialidades primarias, sede inexistente.
 

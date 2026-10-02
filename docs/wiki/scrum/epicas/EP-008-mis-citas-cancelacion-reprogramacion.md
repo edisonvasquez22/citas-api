@@ -2,7 +2,7 @@
 id: EP-008
 tipo: epica
 titulo: "Mis citas, cancelación y reprogramación"
-estado: Borrador
+estado: Terminada
 historias:
   - "[[HU-017-consultar-mis-citas]]"
   - "[[HU-018-cancelar-cita]]"

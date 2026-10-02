@@ -120,7 +120,7 @@ usuario (Stitch/AI Studio) — ver `AGENTS.md` raíz regla 11.
 
 - **UI completa:** las notas de arriba que dicen "la UI no se implementó todavía" quedaron superadas. `citas-web` tiene pantalla para todas las HU con backend, incluidas HU-003/004/005/007/008 y la consulta de historial de HU-023.
 - **Verificación real:** backend y frontend se probaron contra MySQL 8.4 real en Docker con recorridos Playwright de los 3 roles (ver `../llm-wiki/wiki/log.md`).
-- **Estados:** HU-001 a HU-023 siguen en `En desarrollo` y HU-024 en `Borrador`, igual que las épicas. Pasar a `Terminada` requiere que el usuario valide el DoD de cada HU; no se cambia en su nombre.
+- **Estados (actualizado 2026-10-02, a pedido explícito del usuario):** HU-001 a HU-023 y las épicas EP-001 a EP-010 pasan a `Terminada`: todas tienen su evidencia de DoD en "Cumple", `mvn test` 161/161 y verificación contra MySQL real (incluidas las pruebas de concurrencia de RN-01, HU-020 y LOOP_03 con peticiones HTTP simultáneas). HU-024 (contrato REST, tarea continua) y EP-011 siguen abiertas a propósito: se revalidan en cada cambio de contrato.
 
 ## Decisiones/incógnitas pendientes
 

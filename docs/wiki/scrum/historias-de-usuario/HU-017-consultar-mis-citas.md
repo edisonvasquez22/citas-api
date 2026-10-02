@@ -2,7 +2,7 @@
 id: HU-017
 tipo: historia-de-usuario
 titulo: "Consultar mis citas"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-008-mis-citas-cancelacion-reprogramacion]]"
 esfuerzo: "Bajo"
 sprint_sugerido: "Sprint 3 (S4)"
@@ -84,7 +84,7 @@ RF-13. Debe mostrar como mínimo sede, profesional, especialidad, fecha/hora, du
 | Elemento | Resultado | Evidencia | Observación |
 |---|---|---|---|
 | CA-01 | Cumple | `ConsultarMisCitasServiceTest` (7 pruebas: propias, filtro estado, filtro fecha, motivo de rechazo, sin/con/rechazada solicitud de reprogramación) | El motivo de rechazo se resuelve desde `appointment_status_history` (HU-023), no se duplica en `appointments` |
-| DoD-01 | Cumple | `mvn test`: 109/109, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente) |
+| DoD-01 | Cumple | `mvn test`: 109/109, `BUILD SUCCESS` (2026-09-29) | Verificado contra MySQL 8.4 real: con Docker en otro equipo (2026-09-30) y con MySQL nativo en este equipo (2026-10-02). |
 
 ## Historial de validación
 

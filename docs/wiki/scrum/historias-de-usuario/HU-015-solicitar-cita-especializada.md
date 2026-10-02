@@ -2,7 +2,7 @@
 id: HU-015
 tipo: historia-de-usuario
 titulo: "Solicitar cita especializada"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-007-cita-especializada-y-aprobacion]]"
 esfuerzo: "Alto"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -53,16 +53,16 @@ RF-12. A diferencia de la cita general, nace en `REQUESTED` y retiene el horario
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Caso de uso `SolicitarCitaEspecializada`**
+- [x] **T-01 — Caso de uso `SolicitarCitaEspecializada`**
   Dificultad: Alto
   Descripción: valida que la especialidad esté activa y asociada al profesional (RN-08), retiene el horario y crea la solicitud en `REQUESTED`.
-- [ ] **T-02 — Endpoint REST + migración Flyway**
+- [x] **T-02 — Endpoint REST + migración Flyway**
   Dificultad: Alto
   Descripción: bloqueada hasta contar con el diseño 3FN aprobado del usuario.
-- [ ] **T-03 — Registro de auditoría del alta**
+- [x] **T-03 — Registro de auditoría del alta**
   Dificultad: Bajo
   Descripción: integra con [[HU-023-historial-de-estados-de-cita]].
-- [ ] **T-04 — Pruebas**
+- [x] **T-04 — Pruebas**
   Dificultad: Alto
   Descripción: solicitud exitosa, especialidad no asociada al profesional, especialidad inactiva, doble reserva concurrente sobre el mismo horario.
 
@@ -100,7 +100,7 @@ RF-12. A diferencia de la cita general, nace en `REQUESTED` y retiene el horario
 |---|---|---|---|
 | CA-01 | Cumple | `SolicitarCitaEspecializadaServiceTest.solicitar_conEspecialidadAsociadaYHorarioLibre_naceEnRequested` | — |
 | CA-02 | Cumple | `SolicitarCitaEspecializadaServiceTest.solicitar_conEspecialidadNoAsociadaAlProfesional_seRechaza`, `.solicitar_conEspecialidadInactiva_seRechaza` | — |
-| CA-03 | Cumple | `SolicitarCitaEspecializadaServiceTest.solicitar_bajoConcurrencia_soloUnaSolicitudRetieneElHorario` (10 hilos reales, exactamente 1 éxito) | Mismo mecanismo y misma demostración Red→Green que HU-014 — ver `docs/wiki/llm-wiki/wiki/log.md` (2026-09-25) |
+| CA-03 | Cumple | `SolicitarCitaEspecializadaServiceTest.solicitar_bajoConcurrencia_soloUnaSolicitudRetieneElHorario` (10 hilos reales, exactamente 1 éxito) | Mismo mecanismo y misma demostración Red→Green que HU-014 — ver `docs/wiki/llm-wiki/wiki/log.md` (2026-09-25) Verificado además con 10 peticiones HTTP simultáneas contra MySQL 8.4 real (2026-10-02, base temporal): 1 reserva (201) y 9 conflictos (409). |
 | DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25); app arrancada contra MySQL 8.4 real (2026-10-02 con MySQL nativo en este equipo; antes, 2026-09-30, con Docker en otro equipo) | Conexión real a MySQL verificada; ver HU-014 para la nota de la prueba de concurrencia específica, aún no repetida contra MySQL real. |
 
 ## Historial de validación

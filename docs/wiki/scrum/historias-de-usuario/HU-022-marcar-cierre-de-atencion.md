@@ -2,7 +2,7 @@
 id: HU-022
 tipo: historia-de-usuario
 titulo: "Marcar cita como completada o no asistida"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-009-agenda-profesional-y-cierre]]"
 esfuerzo: "Bajo"
 sprint_sugerido: "Sprint 3 (S4)"

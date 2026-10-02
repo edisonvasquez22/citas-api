@@ -2,7 +2,7 @@
 id: HU-020
 tipo: historia-de-usuario
 titulo: "Aprobar/rechazar reprogramación"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-008-mis-citas-cancelacion-reprogramacion]]"
 esfuerzo: "Alto"
 sprint_sugerido: "Sprint 3 (S4)"
@@ -106,8 +106,8 @@ RF-15 (decisión) + RF-18 (aparece en la bandeja administrativa junto a las cita
 | CA-02 | Cumple | `GestionarReprogramacionesServiceTest.rechazar_conMotivo_liberaSoloLaFranjaNuevaYDejaLaCitaOriginalIntacta` | Verifica explícitamente que la franja antigua sigue ocupada y la nueva quedó libre |
 | CA-03 | Cumple | `GestionarReprogramacionesServiceTest.rechazar_sinMotivo_seRechaza` | — |
 | DoD-02 | Cumple | `SolicitudReprogramacion.aprobar()`/`rechazar()` (columnas `decided_by_user_id`/`decided_at`/`decision_reason`) | Mismo razonamiento que HU-019 DoD-02: no hay entrada en `appointment_status_history` porque el `EstadoCita` de la cita no cambia en este flujo (RN-10) |
-| DoD-03 | Cumple | `GestionarReprogramacionesServiceTest.aprobar_concurrentementeLaMismaSolicitud_soloUnaAprobacionTieneExito` (10 hilos, latencia simulada en la lectura de la solicitud) | **Red→Green demostrado el 2026-10-02**: sin el bloqueo la prueba falló (varias aprobaciones simultáneas tenían éxito, un bug real); con `conBloqueoDeEscritura` pasa (1 éxito, 9 `TransicionEstadoInvalidaException`). Pendiente no bloqueante: repetirla contra MySQL real (hoy solo contra el doble en memoria; `SELECT ... FOR UPDATE` ya se usa en LOOP_03). |
-| RF-18 | Cumple | `GestionarReprogramacionesServiceTest.listarPendientes_aplicaFiltrosOpcionales`; `AdminReschedulesController` (`@RequestParam` sedeId/profesionalId/especialidadId/fecha) | La bandeja de reprogramaciones ya se filtra igual que la de citas especializadas (HU-016 CA-04). |
+| DoD-03 | Cumple | `GestionarReprogramacionesServiceTest.aprobar_concurrentementeLaMismaSolicitud_soloUnaAprobacionTieneExito` (10 hilos, latencia simulada en la lectura de la solicitud) | **Red→Green demostrado el 2026-10-02**: sin el bloqueo la prueba falló (varias aprobaciones simultáneas tenían éxito, un bug real); con `conBloqueoDeEscritura` pasa (1 éxito, 9 `TransicionEstadoInvalidaException`). Verificado además con 10 peticiones HTTP simultáneas contra MySQL 8.4 real (2026-10-02, base temporal): 10 aprobaciones simultáneas -> 1 éxito (200) y 9 conflictos (409); 5 aprobar + 5 rechazar -> 1 sola decisión. |
+| RF-18 | Cumple | `GestionarReprogramacionesServiceTest.listarPendientes_aplicaFiltrosOpcionales`; `AdminReschedulesController` (`@RequestParam` sedeId/profesionalId/especialidadId/fecha) | La bandeja de reprogramaciones ya se filtra igual que la de citas especializadas (HU-016 CA-04). Verificado también contra MySQL real (2026-10-02) con una solicitud PENDING: los filtros por sede, profesional, especialidad y fecha devuelven lo esperado. |
 | DoD-01 | Cumple | `mvn test`: 161/161, `BUILD SUCCESS` (2026-10-02); stack levantado contra MySQL 8.4 real con Docker en otro equipo (2026-09-30) y con MySQL nativo en este equipo (2026-10-02) | Ya no queda pendiente la verificación contra MySQL real. |
 
 ## Historial de validación

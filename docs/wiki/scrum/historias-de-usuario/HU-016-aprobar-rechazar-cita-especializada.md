@@ -2,7 +2,7 @@
 id: HU-016
 tipo: historia-de-usuario
 titulo: "Aprobar/rechazar solicitudes especializadas"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-007-cita-especializada-y-aprobacion]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -54,16 +54,16 @@ RF-12 (decisión) + RF-18 (bandeja). El rechazo exige motivo y libera los slots 
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Casos de uso `AprobarCitaEspecializada`/`RechazarCitaEspecializada`**
+- [x] **T-01 — Casos de uso `AprobarCitaEspecializada`/`RechazarCitaEspecializada`**
   Dificultad: Medio
   Descripción: valida estado previo `REQUESTED`, exige motivo en el rechazo, libera slots solo al rechazar.
-- [ ] **T-02 — Endpoint de bandeja con filtros**
+- [x] **T-02 — Endpoint de bandeja con filtros**
   Dificultad: Bajo
   Descripción: `GET` con combinación de filtros.
-- [ ] **T-03 — Registro de auditoría de la transición**
+- [x] **T-03 — Registro de auditoría de la transición**
   Dificultad: Bajo
   Descripción: integra con [[HU-023-historial-de-estados-de-cita]].
-- [ ] **T-04 — Pruebas**
+- [x] **T-04 — Pruebas**
   Dificultad: Medio
   Descripción: aprobar solicitud `REQUESTED`, rechazar con motivo (libera slots), rechazar sin motivo (debe fallar), intentar decidir una solicitud que no está en `REQUESTED`.
 

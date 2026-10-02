@@ -2,7 +2,7 @@
 id: EP-007
 tipo: epica
 titulo: "Cita especializada y aprobación administrativa"
-estado: Borrador
+estado: Terminada
 historias:
   - "[[HU-015-solicitar-cita-especializada]]"
   - "[[HU-016-aprobar-rechazar-cita-especializada]]"

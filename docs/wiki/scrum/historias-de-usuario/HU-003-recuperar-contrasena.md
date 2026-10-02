@@ -2,7 +2,7 @@
 id: HU-003
 tipo: historia-de-usuario
 titulo: "Recuperar contraseña"
-estado: En desarrollo
+estado: Terminada
 epica: "[[EP-001-autenticacion-y-cuentas]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 3 (S4)"

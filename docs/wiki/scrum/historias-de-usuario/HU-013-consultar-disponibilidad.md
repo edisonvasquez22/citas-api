@@ -2,7 +2,7 @@
 id: HU-013
 tipo: historia-de-usuario
 titulo: "Consultar disponibilidad de horarios"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-005-agenda-y-disponibilidad]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -55,13 +55,13 @@ RF-10. Solo deben mostrarse horarios que puedan completar toda la duración requ
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Caso de uso `ConsultarDisponibilidad`**
+- [x] **T-01 — Caso de uso `ConsultarDisponibilidad`**
   Dificultad: Medio
   Descripción: combina filtros y calcula, por especialidad, si hay slots consecutivos suficientes.
-- [ ] **T-02 — Endpoint REST `GET /api/availability`**
+- [x] **T-02 — Endpoint REST `GET /api/availability`**
   Dificultad: Bajo
   Descripción: parámetros de filtro opcionales/combinables.
-- [ ] **T-03 — Pruebas**
+- [x] **T-03 — Pruebas**
   Dificultad: Medio
   Descripción: filtro simple, combinación de filtros, especialidad de 60 min sin dos slots consecutivos libres (debe excluirse).
 

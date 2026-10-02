@@ -2,7 +2,7 @@
 id: EP-003
 tipo: epica
 titulo: "Catálogos del sistema"
-estado: Borrador
+estado: Terminada
 historias:
   - "[[HU-006-precarga-de-catalogos-fijos]]"
   - "[[HU-007-administrar-catalogo-eps]]"

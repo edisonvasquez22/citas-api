@@ -2,7 +2,7 @@
 id: EP-002
 tipo: epica
 titulo: "Perfil y afiliación de usuario"
-estado: Borrador
+estado: Terminada
 historias:
   - "[[HU-004-consultar-y-actualizar-perfil]]"
   - "[[HU-005-asociar-afiliacion]]"

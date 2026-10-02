@@ -2,7 +2,7 @@
 id: HU-011
 tipo: historia-de-usuario
 titulo: "Activar/desactivar profesional"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-004-gestion-de-profesionales]]"
 esfuerzo: "Bajo"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -51,13 +51,13 @@ RF-07 (activar/desactivar). Un profesional desactivado no debe poder publicar nu
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Caso de uso `CambiarEstadoProfesional`**
+- [x] **T-01 — Caso de uso `CambiarEstadoProfesional`**
   Dificultad: Bajo
   Descripción: valida transición activo↔inactivo.
-- [ ] **T-02 — Endpoint REST**
+- [x] **T-02 — Endpoint REST**
   Dificultad: Bajo
   Descripción: autorización exclusiva de ADMIN.
-- [ ] **T-03 — Pruebas**
+- [x] **T-03 — Pruebas**
   Dificultad: Bajo
   Descripción: activar, desactivar, verificar que un profesional inactivo no aparece como opción al publicar disponibilidad nueva.
 

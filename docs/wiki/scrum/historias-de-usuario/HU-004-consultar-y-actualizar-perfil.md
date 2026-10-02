@@ -2,7 +2,7 @@
 id: HU-004
 tipo: historia-de-usuario
 titulo: "Consultar y actualizar perfil"
-estado: En desarrollo
+estado: Terminada
 epica: "[[EP-002-perfil-y-afiliacion]]"
 esfuerzo: "Bajo"
 sprint_sugerido: "Sprint 3 (S4)"

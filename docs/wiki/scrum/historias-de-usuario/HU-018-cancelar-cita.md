@@ -2,7 +2,7 @@
 id: HU-018
 tipo: historia-de-usuario
 titulo: "Cancelar cita"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-008-mis-citas-cancelacion-reprogramacion]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 3 (S4)"

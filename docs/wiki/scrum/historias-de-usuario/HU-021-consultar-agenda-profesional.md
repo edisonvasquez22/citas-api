@@ -2,7 +2,7 @@
 id: HU-021
 tipo: historia-de-usuario
 titulo: "Consultar agenda propia del profesional"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-009-agenda-profesional-y-cierre]]"
 esfuerzo: "Bajo"
 sprint_sugerido: "Sprint 3 (S4)"

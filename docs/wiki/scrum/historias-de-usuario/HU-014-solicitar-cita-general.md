@@ -2,7 +2,7 @@
 id: HU-014
 tipo: historia-de-usuario
 titulo: "Solicitar cita general con aprobación automática"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-006-cita-general]]"
 esfuerzo: "Alto"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -52,16 +52,16 @@ RF-11. Es el primer flujo de creación de citas real del backlog; valida el circ
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Caso de uso `SolicitarCitaGeneral`**
+- [x] **T-01 — Caso de uso `SolicitarCitaGeneral`**
   Dificultad: Alto
   Descripción: verifica disponibilidad al momento de confirmar, retiene el/los slot(s) de forma atómica y crea la cita en `APPROVED`.
-- [ ] **T-02 — Endpoint REST + migración Flyway de citas**
+- [x] **T-02 — Endpoint REST + migración Flyway de citas**
   Dificultad: Alto
   Descripción: bloqueada hasta contar con el diseño 3FN aprobado del usuario.
-- [ ] **T-03 — Registro de auditoría del alta**
+- [x] **T-03 — Registro de auditoría del alta**
   Dificultad: Bajo
   Descripción: integra con [[HU-023-historial-de-estados-de-cita]].
-- [ ] **T-04 — Pruebas**
+- [x] **T-04 — Pruebas**
   Dificultad: Alto
   Descripción: reserva exitosa, horario que se ocupó justo antes de confirmar (doble reserva concurrente), horario en el pasado.
 
@@ -99,7 +99,7 @@ RF-11. Es el primer flujo de creación de citas real del backlog; valida el circ
 |---|---|---|---|
 | CA-01 | Cumple | `SolicitarCitaGeneralServiceTest.solicitar_horarioDisponible_quedaApprovedYAuditado` | Auditoría verificada vía `HistorialEstadoCitaPort` |
 | CA-02 | Cumple | `SolicitarCitaGeneralServiceTest.solicitar_horarioYaTomado_lanzaHorarioNoDisponible` | — |
-| CA-03 | Cumple | `SolicitarCitaGeneralServiceTest.solicitar_bajoConcurrencia_soloUnaSolicitudGanaElHorario` (10 hilos reales vía `ExecutorService`, exactamente 1 éxito) | Demostrado explícitamente en Red→Green: se rompió a propósito el `compareAndSet` de la reserva atómica, la prueba falló (10 éxitos en vez de 1), y volvió a pasar al revertir — ver `docs/wiki/llm-wiki/wiki/log.md` (2026-09-25) |
+| CA-03 | Cumple | `SolicitarCitaGeneralServiceTest.solicitar_bajoConcurrencia_soloUnaSolicitudGanaElHorario` (10 hilos reales vía `ExecutorService`, exactamente 1 éxito) | Demostrado explícitamente en Red→Green: se rompió a propósito el `compareAndSet` de la reserva atómica, la prueba falló (10 éxitos en vez de 1), y volvió a pasar al revertir — ver `docs/wiki/llm-wiki/wiki/log.md` (2026-09-25) Verificado además con 10 peticiones HTTP simultáneas contra MySQL 8.4 real (2026-10-02, base temporal): 1 reserva (201) y 9 conflictos (409). |
 | DoD-01 | Cumple | `mvn test`: 76/76, `BUILD SUCCESS` (2026-09-25); app arrancada contra MySQL 8.4 real (2026-10-02 con MySQL nativo en este equipo; antes, 2026-09-30, con Docker en otro equipo) con Flyway/JPA funcionando end-to-end | La conexión real a MySQL ya está verificada. Pendiente más fino (no bloqueante): repetir específicamente la prueba de concurrencia de 10 hilos contra MySQL real (hoy solo corrió contra el doble en memoria) para confirmar el `UPDATE ... WHERE appointment_id IS NULL` bajo bloqueo de fila InnoDB real. |
 
 ## Historial de validación

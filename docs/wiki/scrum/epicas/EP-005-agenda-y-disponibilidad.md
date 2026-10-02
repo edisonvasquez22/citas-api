@@ -2,7 +2,7 @@
 id: EP-005
 tipo: epica
 titulo: "Agenda y disponibilidad"
-estado: Borrador
+estado: Terminada
 historias:
   - "[[HU-012-gestionar-bloques-de-disponibilidad]]"
   - "[[HU-013-consultar-disponibilidad]]"

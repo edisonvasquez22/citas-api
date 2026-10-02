@@ -2,7 +2,7 @@
 id: HU-002
 tipo: historia-de-usuario
 titulo: "Iniciar sesión y gestionar sesión JWT"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-001-autenticacion-y-cuentas]]"
 esfuerzo: "Alto"
 sprint_sugerido: "Sprint 1 (S2)"
@@ -59,22 +59,22 @@ RF-02 cubre login, emisión de access/refresh token, renovación y revocación/l
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Puertos de aplicación**
+- [x] **T-01 — Puertos de aplicación**
   Dificultad: Medio
   Descripción: `TokenProviderPort` (emitir/validar/decodificar), `RefreshTokenStorePort` (persistir/revocar), `AuthenticationPort` (validar credenciales contra hash).
-- [ ] **T-02 — Casos de uso `IniciarSesion`, `RenovarSesion`, `CerrarSesion`**
+- [x] **T-02 — Casos de uso `IniciarSesion`, `RenovarSesion`, `CerrarSesion`**
   Dificultad: Alto
   Descripción: orquestan los puertos anteriores; definen explícitamente la estrategia de revocación (documentarla en Notas).
-- [ ] **T-03 — Adaptador JWT (`io.jsonwebtoken:jjwt` 0.13.0)**
+- [x] **T-03 — Adaptador JWT (`io.jsonwebtoken:jjwt` 0.13.0)**
   Dificultad: Medio
   Descripción: firmar/verificar access y refresh con secretos separados (`JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`), incluir claim de rol(es).
-- [ ] **T-04 — Spring Security config + filtro JWT**
+- [x] **T-04 — Spring Security config + filtro JWT**
   Dificultad: Alto
   Descripción: filtro que autentica cada request por access token; contexto de autorización con roles.
-- [ ] **T-05 — Endpoints REST `login`/`refresh`/`logout`**
+- [x] **T-05 — Endpoints REST `login`/`refresh`/`logout`**
   Dificultad: Medio
   Descripción: DTOs, códigos de error (401 credenciales inválidas, 401/403 token inválido o expirado).
-- [ ] **T-06 — Pruebas**
+- [x] **T-06 — Pruebas**
   Dificultad: Alto
   Descripción: login feliz, credenciales inválidas, refresh válido, refresh revocado/expirado, logout invalida el refresh usado.
 
@@ -112,12 +112,12 @@ RF-02 cubre login, emisión de access/refresh token, renovación y revocación/l
 
 ## Definition of Done
 
-- [ ] CA-01 a CA-05 validados con evidencia.
-- [ ] Secretos JWT leídos únicamente de variables de entorno; nunca hardcodeados ni logueados.
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Contrato de los tres endpoints reflejado en `llm-wiki/wiki/contratos.md` / [[HU-024-contrato-rest-citas-api]].
-- [ ] Estrategia de revocación documentada en la sección Notas de esta HU.
-- [ ] Trazabilidad de esta HU y su épica actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 a CA-05 validados con evidencia.
+- [x] Secretos JWT leídos únicamente de variables de entorno; nunca hardcodeados ni logueados.
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Contrato de los tres endpoints reflejado en `llm-wiki/wiki/contratos.md` / [[HU-024-contrato-rest-citas-api]].
+- [x] Estrategia de revocación documentada en la sección Notas de esta HU.
+- [x] Trazabilidad de esta HU y su épica actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 

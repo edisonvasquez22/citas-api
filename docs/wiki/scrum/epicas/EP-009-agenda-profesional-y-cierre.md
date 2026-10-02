@@ -2,7 +2,7 @@
 id: EP-009
 tipo: epica
 titulo: "Agenda del profesional y cierre de atención"
-estado: Borrador
+estado: Terminada
 historias:
   - "[[HU-021-consultar-agenda-profesional]]"
   - "[[HU-022-marcar-cierre-de-atencion]]"

@@ -2,7 +2,7 @@
 id: HU-012
 tipo: historia-de-usuario
 titulo: "Gestionar bloques de disponibilidad del profesional"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-005-agenda-y-disponibilidad]]"
 esfuerzo: "Alto"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -59,16 +59,16 @@ RF-08. Ejemplo de un día válido: 08:00–12:00 HIC y 14:00–17:00 HIC. Cada b
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Modelo de dominio `BloqueDisponibilidad` + discretización en slots de 30 min**
+- [x] **T-01 — Modelo de dominio `BloqueDisponibilidad` + discretización en slots de 30 min**
   Dificultad: Alto
   Descripción: sin dependencias de Spring/JPA; expone los slots resultantes.
-- [ ] **T-02 — Casos de uso crear/editar/eliminar bloque**
+- [x] **T-02 — Casos de uso crear/editar/eliminar bloque**
   Dificultad: Alto
   Descripción: valida RN-06, RN-07, no solapamiento y ausencia de citas comprometidas antes de editar/eliminar.
-- [ ] **T-03 — Endpoints REST + migración Flyway**
+- [x] **T-03 — Endpoints REST + migración Flyway**
   Dificultad: Alto
   Descripción: bloqueada hasta contar con el diseño 3FN aprobado del usuario.
-- [ ] **T-04 — Pruebas**
+- [x] **T-04 — Pruebas**
   Dificultad: Alto
   Descripción: bloque válido, bloque en el pasado, bloques solapados, sede no habilitada, edición/eliminación de bloque con cita comprometida.
 

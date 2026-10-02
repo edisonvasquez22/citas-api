@@ -2,7 +2,7 @@
 id: HU-023
 tipo: historia-de-usuario
 titulo: "Registrar y consultar historial de estados de una cita"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-010-auditoria-de-estados]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -57,16 +57,16 @@ RF-19. Es un componente transversal usado por todas las HU que producen una tran
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Puerto `RegistrarTransicionEstadoPort` y modelo de dominio del registro de auditoría**
+- [x] **T-01 — Puerto `RegistrarTransicionEstadoPort` y modelo de dominio del registro de auditoría**
   Dificultad: Medio
   Descripción: reutilizable desde cualquier caso de uso que cambie el estado de una cita.
-- [ ] **T-02 — Adaptador de persistencia + migración Flyway**
+- [x] **T-02 — Adaptador de persistencia + migración Flyway**
   Dificultad: Medio
   Descripción: bloqueada hasta contar con el diseño 3FN aprobado del usuario; la tabla de auditoría no admite `UPDATE`/`DELETE` desde la aplicación.
-- [ ] **T-03 — Exposición de lectura del historial en los endpoints consumidores**
+- [x] **T-03 — Exposición de lectura del historial en los endpoints consumidores**
   Dificultad: Bajo
   Descripción: se integra en las respuestas de HU-017/HU-016/HU-020/HU-021.
-- [ ] **T-04 — Pruebas**
+- [x] **T-04 — Pruebas**
   Dificultad: Medio
   Descripción: verificar que cada transición de las HU consumidoras efectivamente deja un registro; verificar que no existe ningún endpoint de edición/borrado de auditoría.
 

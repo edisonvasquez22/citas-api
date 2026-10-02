@@ -2,7 +2,7 @@
 id: HU-008
 tipo: historia-de-usuario
 titulo: "Administrar catálogo de planes de EPS"
-estado: En desarrollo
+estado: Terminada
 epica: "[[EP-003-catalogos-del-sistema]]"
 esfuerzo: "Bajo"
 sprint_sugerido: "Sprint 3 (S4)"

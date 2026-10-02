@@ -2,7 +2,7 @@
 id: EP-010
 tipo: epica
 titulo: "Auditoría de estados"
-estado: Borrador
+estado: Terminada
 historias:
   - "[[HU-023-historial-de-estados-de-cita]]"
 dependencias: []

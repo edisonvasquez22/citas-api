@@ -2,7 +2,7 @@
 id: HU-009
 tipo: historia-de-usuario
 titulo: "Administrar catálogo de especialidades"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-003-catalogos-del-sistema]]"
 esfuerzo: "Bajo"
 sprint_sugerido: "Sprint 2 (S3)"
@@ -54,13 +54,13 @@ RF-06 (CRUD) + RF-09 (duración 30/60 min como atributo de la especialidad, no d
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Casos de uso CRUD de especialidades**
+- [x] **T-01 — Casos de uso CRUD de especialidades**
   Dificultad: Bajo
   Descripción: valida que la duración sea exactamente 30 o 60 minutos.
-- [ ] **T-02 — Endpoints REST + migración Flyway**
+- [x] **T-02 — Endpoints REST + migración Flyway**
   Dificultad: Bajo
   Descripción: bloqueada hasta contar con el diseño 3FN aprobado del usuario.
-- [ ] **T-03 — Pruebas**
+- [x] **T-03 — Pruebas**
   Dificultad: Bajo
   Descripción: creación con duración válida, duración inválida, desactivación, intento de borrado físico referenciado.
 

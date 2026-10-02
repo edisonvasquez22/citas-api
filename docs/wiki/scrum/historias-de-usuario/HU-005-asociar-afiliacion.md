@@ -2,7 +2,7 @@
 id: HU-005
 tipo: historia-de-usuario
 titulo: "Asociar afiliación EPS/plan/régimen"
-estado: En desarrollo
+estado: Terminada
 epica: "[[EP-002-perfil-y-afiliacion]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 3 (S4)"

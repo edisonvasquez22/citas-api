@@ -2,7 +2,7 @@
 id: EP-001
 tipo: epica
 titulo: "Autenticación y gestión de cuentas"
-estado: Borrador
+estado: Terminada
 historias:
   - "[[HU-001-registrar-usuario]]"
   - "[[HU-002-login-y-sesion-jwt]]"

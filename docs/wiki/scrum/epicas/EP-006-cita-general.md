@@ -2,7 +2,7 @@
 id: EP-006
 tipo: epica
 titulo: "Cita general"
-estado: Borrador
+estado: Terminada
 historias:
   - "[[HU-014-solicitar-cita-general]]"
 dependencias:

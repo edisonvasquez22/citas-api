@@ -2,7 +2,7 @@
 id: HU-001
 tipo: historia-de-usuario
 titulo: "Registrar cuenta de usuario"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-001-autenticacion-y-cuentas]]"
 esfuerzo: "Medio"
 sprint_sugerido: "Sprint 1 (S2)"
@@ -59,19 +59,19 @@ Primer paso del ciclo de vida de cualquier paciente ficticio. RF-01 exige datos 
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Modelo de dominio `Usuario`**
+- [x] **T-01 — Modelo de dominio `Usuario`**
   Dificultad: Bajo
   Descripción: invariantes de registro (formato de email, documento no vacío), sin dependencias de Spring/JPA.
-- [ ] **T-02 — Caso de uso `RegistrarUsuario`**
+- [x] **T-02 — Caso de uso `RegistrarUsuario`**
   Dificultad: Medio
   Descripción: orquesta validación de unicidad vía `UsuarioRepositoryPort` y hashing vía `PasswordHasherPort`.
-- [ ] **T-03 — Adaptador REST `POST /api/auth/register`**
+- [x] **T-03 — Adaptador REST `POST /api/auth/register`**
   Dificultad: Medio
   Descripción: DTO de request/response, mapeo de errores 409 (duplicado) y 400 (validación).
-- [ ] **T-04 — Adaptador de persistencia JPA + migración Flyway**
+- [x] **T-04 — Adaptador de persistencia JPA + migración Flyway**
   Dificultad: Alto
   Descripción: bloqueada hasta que el usuario entregue/apruebe su diseño 3FN de `usuarios`/`roles` (ver `llm-wiki/wiki/decisiones.md`).
-- [ ] **T-05 — Pruebas**
+- [x] **T-05 — Pruebas**
   Dificultad: Medio
   Descripción: unitarias de dominio/aplicación + integración del endpoint (feliz, email duplicado, documento duplicado, datos incompletos).
 
@@ -103,12 +103,12 @@ Primer paso del ciclo de vida de cualquier paciente ficticio. RF-01 exige datos 
 
 ## Definition of Done
 
-- [ ] CA-01 a CA-04 validados con evidencia (test o ejecución documentada).
-- [ ] Migración Flyway del esquema afectado presente y coherente con el diseño 3FN aprobado por el usuario.
-- [ ] La contraseña nunca aparece en logs ni en la respuesta HTTP.
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Contrato del endpoint reflejado en `llm-wiki/wiki/contratos.md` / [[HU-024-contrato-rest-citas-api]].
-- [ ] Trazabilidad de esta HU y su épica actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 a CA-04 validados con evidencia (test o ejecución documentada).
+- [x] Migración Flyway del esquema afectado presente y coherente con el diseño 3FN aprobado por el usuario.
+- [x] La contraseña nunca aparece en logs ni en la respuesta HTTP.
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Contrato del endpoint reflejado en `llm-wiki/wiki/contratos.md` / [[HU-024-contrato-rest-citas-api]].
+- [x] Trazabilidad de esta HU y su épica actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 

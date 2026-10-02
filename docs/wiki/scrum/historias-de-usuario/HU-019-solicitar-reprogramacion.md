@@ -2,7 +2,7 @@
 id: HU-019
 tipo: historia-de-usuario
 titulo: "Solicitar reprogramación de cita"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-008-mis-citas-cancelacion-reprogramacion]]"
 esfuerzo: "Alto"
 sprint_sugerido: "Sprint 3 (S4)"
@@ -108,9 +108,9 @@ RF-15. Solo una cita `APPROVED` y futura puede solicitar reprogramación; conser
 | CA-01 | Cumple | `SolicitarReprogramacionServiceTest.solicitar_horarioDisponible_quedaPendingSinTocarLaCitaOriginal` | — |
 | CA-02 | Cumple | `SolicitarReprogramacionServiceTest.solicitar_citaNoAprobada_seRechaza` | — |
 | CA-03 | Cumple | `SolicitarReprogramacionServiceTest.solicitar_nuevoHorarioNoDisponible_seRechazaSinAfectarLaCitaOriginal` | — |
-| CA-04 | Cumple | `SolicitarReprogramacionServiceTest.solicitar_conSolicitudPendienteExistente_seRechaza` + `.solicitar_dosSolicitudesConcurrentesSobreLaMismaCita_soloUnaQuedaPending` (8 hilos reales, cada uno con horario nuevo distinto para aislar la regla de RN-01) | Demostrado explícitamente en Red→Green (guarda comentada → 2 pruebas fallan con `expected 1 but was 8` → restaurada → 111/111) — ver LOOP_03 más abajo |
+| CA-04 | Cumple | `SolicitarReprogramacionServiceTest.solicitar_conSolicitudPendienteExistente_seRechaza` + `.solicitar_dosSolicitudesConcurrentesSobreLaMismaCita_soloUnaQuedaPending` (8 hilos reales, cada uno con horario nuevo distinto para aislar la regla de RN-01) | Demostrado explícitamente en Red→Green (guarda comentada → 2 pruebas fallan con `expected 1 but was 8` → restaurada → 111/111) — ver LOOP_03 más abajo Verificado además con 10 peticiones HTTP simultáneas contra MySQL 8.4 real (2026-10-02, base temporal): 10 solicitudes sobre la misma cita -> 1 PENDING (200) y 9 conflictos (409). |
 | DoD-02 | Cumple | `SolicitudReprogramacion.solicitar()` (estado `PENDING` al crear) | La transición vive en el propio `reschedule_requests.status_id` (y luego `decided_by_user_id`/`decided_at`/`decision_reason` al decidir, ver HU-020), no en `appointment_status_history`: el `EstadoCita` de la cita no cambia mientras la solicitud está pendiente (RN-10), así que no aplica un registro ahí |
-| DoD-01 | Cumple | `mvn test`: 111/111, `BUILD SUCCESS` (2026-09-29) | Sin verificar aún contra MySQL real (Docker pendiente) |
+| DoD-01 | Cumple | `mvn test`: 111/111, `BUILD SUCCESS` (2026-09-29) | Verificado contra MySQL 8.4 real: con Docker en otro equipo (2026-09-30) y con MySQL nativo en este equipo (2026-10-02). |
 
 ## Historial de validación
 

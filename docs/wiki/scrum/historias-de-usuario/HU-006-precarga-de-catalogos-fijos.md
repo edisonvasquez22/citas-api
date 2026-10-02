@@ -2,7 +2,7 @@
 id: HU-006
 tipo: historia-de-usuario
 titulo: "Precarga de catálogos fijos"
-estado: "En desarrollo"
+estado: Terminada
 epica: "[[EP-003-catalogos-del-sistema]]"
 esfuerzo: "Bajo"
 sprint_sugerido: "Sprint 1 (S2)"
@@ -55,13 +55,13 @@ RF-05. Es la primera pieza fundacional del backlog: casi toda otra HU depende de
 
 ## Tareas de desarrollo
 
-- [ ] **T-01 — Migración Flyway de seed de catálogos fijos**
+- [x] **T-01 — Migración Flyway de seed de catálogos fijos**
   Dificultad: Bajo
   Descripción: depende de que el esquema de estas tablas exista según el diseño 3FN aprobado por el usuario; ejecuta el `INSERT` semilla sobre ese esquema.
-- [ ] **T-02 — Endpoints de solo lectura de catálogos fijos** (si el frontend los necesita para poblar selects)
+- [x] **T-02 — Endpoints de solo lectura de catálogos fijos** (si el frontend los necesita para poblar selects)
   Dificultad: Bajo
   Descripción: `GET /api/catalogos/roles`, `/estados-cita`, `/estados-reprogramacion`, `/regimenes`, `/sedes`.
-- [ ] **T-03 — Pruebas**
+- [x] **T-03 — Pruebas**
   Dificultad: Bajo
   Descripción: verificar que los catálogos existen tras migrar y que los endpoints de lectura responden los valores esperados.
 
@@ -81,10 +81,10 @@ RF-05. Es la primera pieza fundacional del backlog: casi toda otra HU depende de
 
 ## Definition of Done
 
-- [ ] CA-01 y CA-02 validados con evidencia.
-- [ ] Migración Flyway de seed presente y coherente con el esquema 3FN aprobado.
-- [ ] `mvn test` pasa para los módulos afectados.
-- [ ] Trazabilidad actualizada en `docs/wiki/scrum/`.
+- [x] CA-01 y CA-02 validados con evidencia.
+- [x] Migración Flyway de seed presente y coherente con el esquema 3FN aprobado.
+- [x] `mvn test` pasa para los módulos afectados.
+- [x] Trazabilidad actualizada en `docs/wiki/scrum/`.
 
 ## Evidencia de validación
 
