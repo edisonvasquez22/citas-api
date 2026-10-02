@@ -111,3 +111,21 @@ RF-12. A diferencia de la cita general, nace en `REQUESTED` y retiene el horario
 ## Notas y decisiones
 
 - Ninguna.
+
+## Ejecución formal de GOAL_02 (2026-10-02)
+
+`GOAL_02_GUIADO_AVANZADO.md` se había diferido el 2026-09-25 porque exigía que el frontend enviara la solicitud real y esa pantalla no existía. Hoy existe (`BookingView.tsx`), así que se verificó cada condición de parada con evidencia:
+
+| Condición de la meta | Resultado | Evidencia |
+|---|---|---|
+| USER selecciona sede + especialidad + profesional + horario | PASS | `BookingView.tsx`: selector de sede (2 sedes), especialidad, profesional filtrado por especialidad y sede, y horarios de `GET /api/availability`. |
+| El frontend envía la solicitud real a `citas-api` | PASS | `BookingView.tsx` (`POST /api/appointments/specialized` con profesionalId, sedeId, especialidadId, fecha y hora); sin datos simulados. |
+| El backend retiene los slots y la cita queda `REQUESTED` | PASS | `SolicitarCitaEspecializadaServiceTest`; además, contra MySQL 8.4 real (2026-10-02), 3 solicitudes especializadas quedaron `REQUESTED`. |
+| Una segunda reserva incompatible no puede tomar esos slots | PASS | `SolicitarCitaEspecializadaServiceTest.solicitar_bajoConcurrencia_soloUnaSolicitudRetieneElHorario` (10 hilos); y contra MySQL real 10 peticiones simultáneas → 1×201 y 9×409. |
+| Respuesta y errores se muestran en el frontend | PASS | `BookingView.tsx` maneja `409` (horario perdido), `400`/`404` (mensaje del backend) y error de red con mensajes visibles. |
+| Pruebas backend del flujo pasan | PASS | `mvn test`: 161/161. |
+| El frontend compila y sus verificaciones pasan | PASS | `npm run build` y `npm run lint` sin errores; `vitest`: 17/17 (ejecutado en serie; en paralelo este equipo agota el tiempo de arranque de los workers). |
+| Sin secretos hardcodeados | PASS | Hook de pre-commit (versionado en `scripts/git-hooks/`) y búsqueda de secretos conocidos en lo versionado: sin hallazgos. |
+| No se implementa la decisión ADMIN en esta HU | PASS | Es HU-016, aprobada y verificada por separado. |
+
+Resultado: **GOAL_02 PASS**. Verificación hecha por revisión directa del agente (sin Verifier aislado), que es la diferencia con LOOP_01/LOOP_02.
