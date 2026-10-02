@@ -1,0 +1,235 @@
+{
+  "name": "WF-001 — Recordatorio de citas próximas",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "cada-d-a-08-00",
+      "name": "Cada día 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== CONFIGURACIÓN DE LABORATORIO (editar antes de activar) =====\n// Todos los correos van a este destinatario de prueba, NO al paciente: los datos del laboratorio son sintéticos.\nconst LAB_RECIPIENT = 'LAB_RECIPIENT_AQUI';\n// ====================================================================\n// URL pública de citas-api (túnel) SIN barra final. Ej.: https://algo.trycloudflare.com\nconst API_BASE_URL = 'API_BASE_URL_AQUI';\nconst HORAS_VENTANA = 24;\nif (LAB_RECIPIENT === 'LAB_RECIPIENT_AQUI' || API_BASE_URL === 'API_BASE_URL_AQUI') {\n  throw new Error('Configura LAB_RECIPIENT y API_BASE_URL antes de ejecutar');\n}\nconst fmtLocal = (d) => d.toFormat(\"yyyy-MM-dd'T'HH:mm:ss\");\nconst ahora = $now;\nreturn [{ json: { apiBaseUrl: API_BASE_URL, labRecipient: LAB_RECIPIENT, desde: fmtLocal(ahora), hasta: fmtLocal(ahora.plus({ hours: HORAS_VENTANA })) } }];"
+      },
+      "id": "calcular-ventana",
+      "name": "Calcular ventana",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.apiBaseUrl }}/api/integration/appointments/reminders",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "desde",
+              "value": "={{ $json.desde }}"
+            },
+            {
+              "name": "hasta",
+              "value": "={{ $json.hasta }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "consultar-citas-pr-ximas",
+      "name": "Consultar citas próximas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REASIGNAR",
+          "name": "FCV Integration Key"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]));\nconst fmt = (iso) => { const d = new Date(iso); return isNaN(d) ? esc(iso) : d.toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'full', timeStyle: 'short' }); };\nconst cfg = $('Calcular ventana').first().json;\nconst citas = $input.all().map((i) => i.json).flatMap((j) => (Array.isArray(j) ? j : j.citaId ? [j] : []));\n// Deduplicación: no recordar dos veces la misma cita en el mismo horario.\nconst memoria = $getWorkflowStaticData('global');\nmemoria.recordadas = memoria.recordadas ?? {};\nconst salida = [];\nfor (const c of citas) {\n  if (c.estado !== 'APPROVED') continue;\n  const clave = c.citaId + '|' + c.inicio;\n  if (memoria.recordadas[clave]) continue;\n  salida.push({ json: { clave, citaId: c.citaId, to: cfg.labRecipient,\n    subject: '[FCV Lab] Recordatorio de cita #' + c.citaId,\n    html: '<p>Hola ' + esc(c.pacienteNombre) + ',</p><p>Te recordamos tu cita:</p><ul><li><b>Fecha:</b> ' + fmt(c.inicio)\n      + '</li><li><b>Profesional:</b> ' + esc(c.profesionalNombre) + '</li><li><b>Especialidad:</b> ' + esc(c.especialidadNombre)\n      + '</li><li><b>Sede:</b> ' + esc(c.sedeNombre) + '</li></ul><p style=\"color:#666\">Correo de laboratorio. Destinatario original: ' + esc(c.pacienteEmail) + '</p>' } });\n}\nreturn salida;"
+      },
+      "id": "preparar-recordatorios",
+      "name": "Preparar recordatorios",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "enviar-gmail",
+      "name": "Enviar Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        900,
+        -80
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REASIGNAR",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Se ejecuta solo si Gmail confirmó el envío: marca la cita como recordada y deja trazabilidad.\nconst memoria = $getWorkflowStaticData('global');\nmemoria.recordadas = memoria.recordadas ?? {};\nconst previo = $('Preparar recordatorios').all();\nconst resultados = [];\nfor (const [idx, item] of $input.all().entries()) {\n  const origen = previo[idx]?.json ?? {};\n  if (origen.clave) memoria.recordadas[origen.clave] = new Date().toISOString();\n  resultados.push({ json: { resultado: 'SENT', citaId: origen.citaId, gmailId: item.json.id ?? null, momento: new Date().toISOString() } });\n}\nreturn resultados;"
+      },
+      "id": "registrar-env-o-sent-",
+      "name": "Registrar envío (SENT)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1140,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((i) => ({ json: { resultado: 'FAILED', causa: 'gmail', detalle: i.json.error ?? null, momento: new Date().toISOString() } }));"
+      },
+      "id": "registrar-fallo-de-gmail-failed-",
+      "name": "Registrar fallo de Gmail (FAILED)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1140,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { resultado: 'FAILED', causa: 'api-no-disponible', detalle: $input.first().json.error ?? null, momento: new Date().toISOString() } }];"
+      },
+      "id": "registrar-api-no-disponible",
+      "name": "Registrar API no disponible",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "Cada día 08:00": {
+      "main": [
+        [
+          {
+            "node": "Calcular ventana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular ventana": {
+      "main": [
+        [
+          {
+            "node": "Consultar citas próximas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar citas próximas": {
+      "main": [
+        [
+          {
+            "node": "Preparar recordatorios",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar API no disponible",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar recordatorios": {
+      "main": [
+        [
+          {
+            "node": "Enviar Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Gmail": {
+      "main": [
+        [
+          {
+            "node": "Registrar envío (SENT)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar fallo de Gmail (FAILED)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  },
+  "active": false
+}

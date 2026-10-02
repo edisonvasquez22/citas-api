@@ -1,0 +1,197 @@
+{
+  "name": "WF-003 — Resumen operativo diario",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 20
+            }
+          ]
+        }
+      },
+      "id": "cada-d-a-20-00",
+      "name": "Cada día 20:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== CONFIGURACIÓN DE LABORATORIO (editar antes de activar) =====\n// Todos los correos van a este destinatario de prueba, NO al paciente: los datos del laboratorio son sintéticos.\nconst LAB_RECIPIENT = 'LAB_RECIPIENT_AQUI';\n// ====================================================================\nconst API_BASE_URL = 'API_BASE_URL_AQUI';\nif (LAB_RECIPIENT === 'LAB_RECIPIENT_AQUI' || API_BASE_URL === 'API_BASE_URL_AQUI') {\n  throw new Error('Configura LAB_RECIPIENT y API_BASE_URL antes de ejecutar');\n}\nreturn [{ json: { apiBaseUrl: API_BASE_URL, labRecipient: LAB_RECIPIENT, fecha: $now.toFormat('yyyy-MM-dd') } }];"
+      },
+      "id": "calcular-fecha",
+      "name": "Calcular fecha",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.apiBaseUrl }}/api/integration/appointments/daily-summary",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fecha",
+              "value": "={{ $json.fecha }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "consultar-resumen-del-d-a",
+      "name": "Consultar resumen del día",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REASIGNAR",
+          "name": "FCV Integration Key"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]));\nconst cfg = $('Calcular fecha').first().json;\nconst r = $input.first().json;\nconst tabla = (titulo, mapa) => '<h3>' + titulo + '</h3><table border=\"1\" cellpadding=\"4\" style=\"border-collapse:collapse\"><tr><th>Grupo</th><th>Citas</th></tr>'\n  + Object.entries(mapa ?? {}).map(([k, v]) => '<tr><td>' + esc(k) + '</td><td>' + esc(v) + '</td></tr>').join('') + '</table>';\nconst html = '<h2>Resumen operativo ' + esc(r.fecha ?? cfg.fecha) + '</h2><p>Total de citas: <b>' + esc(r.total ?? 0) + '</b></p>'\n  + tabla('Por sede', r.porSede) + tabla('Por estado', r.porEstado) + tabla('Por especialidad', r.porEspecialidad)\n  + '<p style=\"color:#666\">Resumen agregado, sin datos personales. Laboratorio FCV.</p>';\nreturn [{ json: { to: cfg.labRecipient, subject: '[FCV Lab] Resumen operativo ' + (r.fecha ?? cfg.fecha), html } }];"
+      },
+      "id": "armar-resumen",
+      "name": "Armar resumen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Calcular fecha').first().json;\nreturn [{ json: { to: cfg.labRecipient, subject: '[FCV Lab] INCIDENCIA: no se pudo generar el resumen del ' + cfg.fecha,\n  html: '<p>La API de citas no respondió al consultar el resumen del día ' + cfg.fecha + '. Revisa que citas-api y el túnel estén activos.</p>' } }];"
+      },
+      "id": "armar-incidencia",
+      "name": "Armar incidencia",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "enviar-gmail",
+      "name": "Enviar Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        920,
+        20
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REASIGNAR",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cada día 20:00": {
+      "main": [
+        [
+          {
+            "node": "Calcular fecha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular fecha": {
+      "main": [
+        [
+          {
+            "node": "Consultar resumen del día",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar resumen del día": {
+      "main": [
+        [
+          {
+            "node": "Armar resumen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Armar incidencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar resumen": {
+      "main": [
+        [
+          {
+            "node": "Enviar Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar incidencia": {
+      "main": [
+        [
+          {
+            "node": "Enviar Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  },
+  "active": false
+}

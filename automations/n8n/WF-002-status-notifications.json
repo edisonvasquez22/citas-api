@@ -1,0 +1,223 @@
+{
+  "name": "WF-002 — Notificación por cambio de estado",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fcv-citas/status",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-estado-de-cita",
+      "name": "Webhook estado de cita",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "fcv-citas-status",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REASIGNAR",
+          "name": "FCV Webhook Secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== CONFIGURACIÓN DE LABORATORIO (editar antes de activar) =====\n// Todos los correos van a este destinatario de prueba, NO al paciente: los datos del laboratorio son sintéticos.\nconst LAB_RECIPIENT = 'LAB_RECIPIENT_AQUI';\n// ====================================================================\nconst esc = (s) => String(s ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]));\nconst fmt = (iso) => { const d = new Date(iso); return isNaN(d) ? esc(iso) : d.toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'full', timeStyle: 'short' }); };\nconst MENSAJES = {\n  ESPECIALIZADA_APROBADA: { asunto: 'Tu cita especializada fue aprobada', frase: 'Tu solicitud de cita especializada fue APROBADA.' },\n  ESPECIALIZADA_RECHAZADA: { asunto: 'Tu cita especializada fue rechazada', frase: 'Tu solicitud de cita especializada fue RECHAZADA.' },\n  CITA_CANCELADA: { asunto: 'Tu cita fue cancelada', frase: 'Tu cita fue CANCELADA.' },\n  REPROGRAMACION_APROBADA: { asunto: 'Tu reprogramación fue aprobada', frase: 'Tu solicitud de reprogramación fue APROBADA.' },\n  REPROGRAMACION_RECHAZADA: { asunto: 'Tu reprogramación fue rechazada', frase: 'Tu solicitud de reprogramación fue RECHAZADA.' },\n};\nconst entrada = $input.first().json;\nconst b = entrada.body ?? entrada;\nconst fallo = (httpStatus, error) => [{ json: { ok: false, httpStatus, error } }];\n\nif (!b || typeof b !== 'object') return fallo(400, 'Cuerpo vacío o inválido');\nif (!MENSAJES[b.tipo]) return fallo(400, 'Tipo de evento desconocido: ' + esc(b.tipo));\nif (!Number.isInteger(b.citaId)) return fallo(400, 'citaId inválido');\nif (!b.pacienteEmail || !String(b.pacienteEmail).includes('@')) return fallo(400, 'Falta pacienteEmail');\nif (LAB_RECIPIENT === 'LAB_RECIPIENT_AQUI') return fallo(503, 'Destinatario de laboratorio sin configurar');\n\nconst m = MENSAJES[b.tipo];\nconst motivo = b.motivo ? '<p><b>Motivo:</b> ' + esc(b.motivo) + '</p>' : '';\nconst html = '<p>Hola ' + esc(b.pacienteNombre ?? '') + ',</p><p>' + m.frase + '</p>'\n  + '<ul><li><b>Cita:</b> #' + b.citaId + '</li>'\n  + '<li><b>Fecha:</b> ' + fmt(b.inicio) + '</li>'\n  + '<li><b>Profesional:</b> ' + esc(b.profesionalNombre) + '</li>'\n  + '<li><b>Especialidad:</b> ' + esc(b.especialidadNombre) + '</li>'\n  + '<li><b>Sede:</b> ' + esc(b.sedeNombre) + '</li></ul>' + motivo\n  + '<p style=\"color:#666\">Correo de laboratorio (datos sintéticos). Destinatario original: ' + esc(b.pacienteEmail) + '</p>';\nreturn [{ json: { ok: true, tipo: b.tipo, citaId: b.citaId, to: LAB_RECIPIENT, subject: '[FCV Lab] ' + m.asunto + ' (cita #' + b.citaId + ')', html } }];"
+      },
+      "id": "validar-y-preparar-correo",
+      "name": "Validar y preparar correo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ok",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "-evento-v-lido-",
+      "name": "¿Evento válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "enviar-gmail",
+      "name": "Enviar Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        -100
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REASIGNAR",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { status: \"sent\", tipo: $(\"Validar y preparar correo\").item.json.tipo, citaId: $(\"Validar y preparar correo\").item.json.citaId } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "responder-200",
+      "name": "Responder 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        960,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { status: \"error\", error: \"No se pudo enviar el correo\" } }}",
+        "options": {
+          "responseCode": 503
+        }
+      },
+      "id": "responder-503-gmail-fall-",
+      "name": "Responder 503 (Gmail falló)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        960,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { status: \"rejected\", error: $json.error } }}",
+        "options": {
+          "responseCode": "={{ $json.httpStatus }}"
+        }
+      },
+      "id": "responder-error-de-validaci-n",
+      "name": "Responder error de validación",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        720,
+        160
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook estado de cita": {
+      "main": [
+        [
+          {
+            "node": "Validar y preparar correo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar y preparar correo": {
+      "main": [
+        [
+          {
+            "node": "¿Evento válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Evento válido?": {
+      "main": [
+        [
+          {
+            "node": "Enviar Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder error de validación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Gmail": {
+      "main": [
+        [
+          {
+            "node": "Responder 200",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 503 (Gmail falló)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  },
+  "active": false
+}
