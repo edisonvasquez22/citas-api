@@ -37,6 +37,6 @@ Nota: en un equipo lento, `npm test` puede agotar el tiempo de arranque de los w
 - **Docker:** el proyecto se levantó con Docker (MySQL 8.4) en otro equipo (2026-09-30); en el equipo de la última verificación Docker no fue viable y se usó MySQL Community Server nativo (2026-10-02). Ambas verificaciones están registradas en las HU.
 - **LOOP_03** lo diseñó el agente orquestador, presentado y aprobado explícitamente por el estudiante antes de ejecutarse (HU-019, log 2026-09-30).
 - **GOAL_02** se difirió el 2026-09-25 hasta tener la pantalla real de agendar y se ejecutó formalmente el 2026-10-02; la verificación fue por revisión directa, sin Verifier aislado.
-- **n8n:** WF-001 y WF-003 se ejecutaron a mano contra la API expuesta con un túnel temporal; no se publicaron con horario porque la API no tiene URL pública estable. WF-002 sí está publicado.
+- **n8n:** los tres workflows están publicados. WF-001 y WF-003 se ejecutaron a mano contra la API expuesta con un túnel temporal; como la API no tiene URL pública estable, sus ejecuciones programadas (08:00 y 20:00, hora de Bogotá) no encuentran la API y siguen el camino de error diseñado: WF-001 registra `FAILED` sin enviar correo y WF-003 envía un correo de incidencia. WF-002 (webhook) funciona de punta a punta en producción.
 - **Gmail OAuth:** el nodo de n8n exige un alcance amplio; se recomienda cuenta de laboratorio y revocar el acceso al terminar.
 - **Diseño visual:** lo decidió y ejecutó el estudiante (Stitch + AI Studio); el agente solo reconcilió contra la API real.

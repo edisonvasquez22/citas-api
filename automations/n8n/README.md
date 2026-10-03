@@ -49,3 +49,7 @@ Desde el agente (Claude Code) y mediante el conector MCP de n8n del curso se hiz
 3. **Ejecución controlada:** `execute_workflow` (modo `manual`, disparador "Webhook estado de cita", evento `REPROGRAMACION_APROBADA` de prueba) → ejecución `#72`, estado `success`; Gmail respondió con el mensaje enviado.
 4. **Hallazgo por inspección de la ejecución:** el correo mostraba "4:00 a. m." para una cita a las 09:00 (el backend envía hora local de Bogotá sin zona y el nodo Code la interpretaba como UTC). Corregido en los JSON (`fmt` ya no convierte horas sin zona) y probado localmente.
 5. **Reverificación de la corrección:** tras aplicar la línea `fmt` corregida en el nodo, una segunda ejecución controlada por MCP (`#74`, estado `success`, evento `REPROGRAMACION_APROBADA`) produjo el correo con la fecha "lunes, 12 de octubre de 2026, 9:00 a. m." para una cita a las 09:00; la ejecución `#72` anterior mostraba 4:00 a. m.
+
+## Estado de publicación (2026-10-03)
+
+Los tres workflows están publicados. WF-002 (webhook) opera de punta a punta en producción: `200` con el secreto correcto, `403` sin él, y el correo muestra la hora local correcta (ejecución `#94`, modo `webhook`). WF-001 (08:00) y WF-003 (20:00) se programaron, pero `citas-api` no tiene una URL pública estable: si `API_BASE_URL` apunta a un túnel cerrado, WF-001 registra `FAILED / api-no-disponible` y WF-003 envía el correo de incidencia. Para producción real se necesita una URL pública estable de la API.
