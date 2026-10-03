@@ -33,12 +33,12 @@ com.fcv.citas
 
 ## Cómo correr y probar
 
-Desde la raíz del workspace (`docker-compose.yml`, `.env` copiado de `.env.example`):
+Con el `.env.example` de este repo como referencia de variables. El entorno de desarrollo original usa el `docker-compose.yml` de la raíz del workspace (no incluido en este repo); también funciona con un MySQL 8.4 local (verificado con MySQL Community Server nativo en Windows). Con Docker:
 
 ```powershell
 docker compose up -d                      # mysql + contenedores de desarrollo
 docker exec -it fcv-citas-api-dev bash    # dentro: cd citas-api-develop
-mvn test                                  # 159 pruebas (perfil "test": sin MySQL)
+mvn test                                  # 161 pruebas (perfil "test": sin MySQL)
 mvn spring-boot:run                       # aplica Flyway V1..V4 y levanta :8080
 ```
 
